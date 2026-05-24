@@ -258,6 +258,18 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 #win h1{font-size:2.4rem;letter-spacing:4px;text-transform:uppercase;}
 .res-box{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px;min-width:380px;}
 .res-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+
+/* ── SIMULATION MODE ── */
+.sim-bar{display:none;align-items:center;gap:8px;padding:5px 12px;background:rgba(231,76,60,.08);border-bottom:1px solid rgba(231,76,60,.2);flex-shrink:0;}
+.sim-bar.show{display:flex;}
+.sim-live{font-size:.58rem;font-weight:900;letter-spacing:2px;color:#e74c3c;background:rgba(231,76,60,.18);border:1px solid rgba(231,76,60,.4);border-radius:3px;padding:2px 7px;animation:livepulse 1.2s ease-in-out infinite;}
+@keyframes livepulse{0%,100%{opacity:1;}50%{opacity:.45;}}
+.sim-lbl{font-size:.72rem;color:#ccc;flex:1;}
+.sim-spd{display:flex;gap:4px;}
+.sim-spd-btn{padding:3px 9px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--dim);font-size:.62rem;cursor:pointer;transition:all .12s;}
+.sim-spd-btn.active{background:rgba(255,255,255,.1);color:#fff;border-color:#666;}
+.sim-pause{padding:3px 10px;border-radius:4px;border:1px solid rgba(241,196,15,.4);background:rgba(241,196,15,.07);color:#f1c40f;font-size:.62rem;cursor:pointer;}
+.sim-pause:hover{background:rgba(241,196,15,.15);}
 </style>
 </head>
 <body>
@@ -292,6 +304,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     <div class="mode-tabs">
       <button class="tab-btn active" id="mHot" onclick="setMode('hot')">Hotseat Multiplayer</button>
       <button class="tab-btn" id="mSolo" onclick="setMode('solo')">vs AI</button>
+      <button class="tab-btn" id="mSim" onclick="setMode('sim')">🎬 Watch AI Simulation</button>
     </div>
   </div>
 
@@ -319,7 +332,19 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 </div>
 
 <!-- ══════════ GAME ══════════ -->
-<div class="screen" id="game">
+<div class="screen" id="game" style="flex-direction:column;">
+  <div class="sim-bar" id="simBar">
+    <span class="sim-live">● LIVE</span>
+    <span class="sim-lbl" id="simLbl">AI Simulation in progress…</span>
+    <div class="sim-spd">
+      <button class="sim-spd-btn" onclick="setSimSpeed('slow')">🐢 Slow</button>
+      <button class="sim-spd-btn active" onclick="setSimSpeed('normal')">▶ Normal</button>
+      <button class="sim-spd-btn" onclick="setSimSpeed('fast')">⚡ Fast</button>
+      <button class="sim-spd-btn" onclick="setSimSpeed('turbo')">🚀 Turbo</button>
+    </div>
+    <button class="sim-pause" id="simPauseBtn" onclick="toggleSimPause()">⏸ Pause</button>
+  </div>
+  <div style="display:flex;flex:1;overflow:hidden;">
   <div class="sidebar">
     <div style="font-size:.8rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--dim);padding:2px 0;">GTNW</div>
 
@@ -444,6 +469,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
       <div class="hcards" id="hCards"></div>
     </div>
   </div>
+  </div><!-- end inner flex row -->
 </div>
 
 <!-- ══════════ WORLD END ══════════ -->
@@ -579,6 +605,9 @@ const CARD_POOL = [
 let G = {};
 let setupPlayers = [];
 let gMode = 'hot';
+let simPaused = false;
+let simSpeed = 'normal'; // slow | normal | fast | turbo
+const SIM_DELAYS = { slow: 1800, normal: 800, fast: 250, turbo: 60 };
 let vpThresh = 13;
 let handTab = 'all';
 
@@ -608,8 +637,9 @@ function setMode(m) {
   gMode = m;
   document.getElementById('mHot').classList.toggle('active', m==='hot');
   document.getElementById('mSolo').classList.toggle('active', m==='solo');
+  document.getElementById('mSim').classList.toggle('active', m==='sim');
   if (m==='solo' && setupPlayers.length > 2) { setupPlayers = setupPlayers.slice(0,2); }
-  document.getElementById('addPBtn').style.display = m==='solo' ? 'none' : '';
+  document.getElementById('addPBtn').style.display = (m==='solo') ? 'none' : '';
   renderSetupPlayers();
 }
 
@@ -640,9 +670,9 @@ function renderSetupPlayers() {
   const spOptions = ['USA','USSR','CHN','UK','FRA','GER','JPN','UK'].map(id =>
     `<option value="${id}">${INIT_STATES.find(s=>s.id===id)?.name||id}</option>`).join('');
   c.innerHTML = setupPlayers.map((p,i) => {
-    const isAI = gMode==='solo' && i>0;
+    const isAI = (gMode==='solo' && i>0) || gMode==='sim';
     return `<div class="prow">
-      <span class="plbl">${isAI?'AI '+i:'P'+(i+1)}</span>
+      <span class="plbl">${isAI ? (gMode==='sim'?'🤖':'AI '+i) : 'P'+(i+1)}</span>
       ${Object.values(SOCIETIES).map(s=>
         `<button class="soc-btn ${p.soc===s.id?'selected':''}" style="color:${s.color};padding:8px 5px;" onclick="setPlayerSoc(${i},'${s.id}')">
           <span class="si" style="font-size:1rem">${s.icon}</span>
@@ -685,7 +715,7 @@ function shuffle(a) {
 
 function startGame() {
   const players = setupPlayers.map((p, i) => ({
-    name: p.name, soc: p.soc, isAI: gMode==='solo' && i>0,
+    name: p.name, soc: p.soc, isAI: gMode==='solo' ? i>0 : gMode==='sim' ? true : false,
     ip: 8, deck: buildDeck(p.soc), hand: [], discard: [],
     agents: [p.sp], // stateIds where this player has agents
     startSP: p.sp,
@@ -712,12 +742,17 @@ function startGame() {
   // Deal 4 starting cards
   players.forEach(p => { for(let i=0;i<4;i++) dealCard(p); });
 
+  simPaused = false;
   showScreen('game');
   document.getElementById('vpThreshLbl').textContent = vpThresh;
+  // Show sim bar if in simulation mode
+  const simBar = document.getElementById('simBar');
+  simBar.classList.toggle('show', gMode==='sim');
+  if (gMode==='sim') setSimSpeed('normal');
   logE(`Round 1 begins. ${cur().name} (${SOCIETIES[cur().soc].icon} ${SOCIETIES[cur().soc].name}) goes first.`);
   setPhase('draw');
   renderAll();
-  if (cur().isAI) setTimeout(aiTurn, 700);
+  if (cur().isAI) setTimeout(aiTurn, gMode==='sim' ? SIM_DELAYS[simSpeed] : 700);
 }
 
 function dealCard(p) {
@@ -894,6 +929,33 @@ function setPhase(ph) {
   document.getElementById('bPlay').disabled = G.selCardIdx===null || ph==='draw';
 }
 
+// ═══════════════════════════════════════════════════════
+//  SIMULATION CONTROLS
+// ═══════════════════════════════════════════════════════
+function setSimSpeed(s) {
+  simSpeed = s;
+  document.querySelectorAll('.sim-spd-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.toLowerCase().includes(s==='normal'?'normal':s==='fast'?'fast':s==='turbo'?'turbo':'slow'));
+  });
+  document.getElementById('simLbl').textContent = `AI Simulation · Speed: ${s.charAt(0).toUpperCase()+s.slice(1)}`;
+}
+
+function toggleSimPause() {
+  simPaused = !simPaused;
+  const btn = document.getElementById('simPauseBtn');
+  btn.textContent = simPaused ? '▶ Resume' : '⏸ Pause';
+  btn.style.borderColor = simPaused ? 'rgba(46,204,113,.5)' : 'rgba(241,196,15,.4)';
+  btn.style.color = simPaused ? '#2ecc71' : '#f1c40f';
+  if (!simPaused && cur().isAI && !checkEndConditions()) {
+    setTimeout(aiTurn, SIM_DELAYS[simSpeed]);
+  }
+}
+
+function waitForResume(fn) {
+  if (!simPaused) { fn(); return; }
+  const poll = setInterval(() => { if (!simPaused) { clearInterval(poll); fn(); } }, 200);
+}
+
 function doDrawCard() {
   if (G.drawn) return notify('Already drew this turn.');
   const p = cur();
@@ -919,7 +981,7 @@ function setHandTab(t) {
 }
 
 function selectCard(idx) {
-  if (cur().isAI) return;
+  if (cur().isAI || gMode==='sim') return;
   if (G.phase==='draw') { setPhase('action'); }
   const p = cur();
   if (p.ip < p.hand[idx].cost) return notify('Not enough IP to play that card.');
@@ -1270,7 +1332,10 @@ function doEndTurn() {
   setPhase('draw');
   renderAll();
   checkEndConditions();
-  if (next.isAI && !checkEndConditions()) setTimeout(aiTurn, 700);
+  if (next.isAI && !checkEndConditions()) {
+    const delay = gMode==='sim' ? SIM_DELAYS[simSpeed] : 700;
+    setTimeout(() => { if (!simPaused) aiTurn(); }, delay);
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1371,7 +1436,8 @@ function aiTurn() {
     }
   }
 
-  setTimeout(() => doEndTurn(), 500);
+  const aiDelay = gMode==='sim' ? Math.floor(SIM_DELAYS[simSpeed]*0.6) : 500;
+  setTimeout(() => { if (!simPaused) doEndTurn(); else waitForResume(doEndTurn); }, aiDelay);
 }
 
 // ═══════════════════════════════════════════════════════
