@@ -352,42 +352,26 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .comm-opt-score{font-size:.68rem;color:var(--dim);font-weight:bold;white-space:nowrap;padding-top:3px;}
 .comm-opt.best .comm-opt-score{color:#f1c40f;}
 .comm-opt-empty{font-size:.78rem;color:var(--dim);padding:.5rem 0;}
-/* ── STARTING POSITION PICKER ── */
-#spPickOverlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:600;display:none;align-items:center;justify-content:center;}
-.sp-pick-box{background:#12122a;border:1px solid #2a2a4a;border-radius:1rem;padding:2rem 2rem 1.5rem;max-width:720px;width:92%;max-height:90vh;overflow-y:auto;}
-.sp-pick-box.ana-wide{max-width:1060px;}
-.sp-pick-box.ana-wide .sp-card{padding:.75rem .7rem .7rem;}
-.sp-pick-box.ana-wide .sp-card-flag{font-size:1.5rem;}
-.sp-pick-box.ana-wide .sp-card-name{font-size:.88rem;}
-.sp-pick-box.ana-wide .sp-card-note{font-size:.62rem;}
-.sp-pick-box.ana-wide .sp-card-ip{font-size:.66rem;}
-.sp-pick-box.ana-wide .sp-pick-cards{gap:.6rem;}
-.sp-pick-header{text-align:center;margin-bottom:1.4rem;}
-.sp-pick-soc-badge{font-size:2.8rem;margin-bottom:.4rem;line-height:1;}
-.sp-pick-title{font-size:1.25rem;font-weight:900;margin:0 0 .35rem;color:var(--text);}
-.sp-pick-sub{font-size:.72rem;color:var(--dim);margin:0;}
-.sp-pick-cards{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;}
-@media(max-width:700px){.sp-pick-cards{grid-template-columns:1fr 1fr !important;}}
-@media(max-width:420px){.sp-pick-cards{grid-template-columns:1fr !important;}}
-.sp-card{background:#1a1a30;border:2px solid #252540;border-radius:.75rem;padding:1.1rem 1rem 1rem;cursor:pointer;transition:all .15s;position:relative;display:flex;flex-direction:column;}
-.sp-card:hover{border-color:rgba(255,255,255,.28);transform:translateY(-2px);background:#1f1f3a;}
-.sp-card-flag{font-size:2rem;margin-bottom:.3rem;line-height:1;}
-.sp-card-name{font-size:1rem;font-weight:900;margin-bottom:.25rem;color:#fff;}
-.sp-card-ip{font-size:.72rem;color:#ccc;margin-bottom:.4rem;}
-.sp-card-ip strong{color:#f39c12;}
-.sp-card-stats{font-size:.62rem;color:var(--dim);margin-bottom:.65rem;letter-spacing:.5px;}
-.sp-fit-badge{display:inline-block;font-size:.58rem;font-weight:900;letter-spacing:1.2px;padding:2px 8px;border-radius:10px;margin-bottom:.6rem;width:fit-content;}
+/* ── BOARD PICK MODE ── */
+#boardPickBanner{display:none;background:#0d0d22;border-bottom:2px solid #1e1e40;padding:.7rem 1.1rem .65rem;flex-shrink:0;}
+#boardPickBanner.active{display:flex;align-items:center;gap:.9rem;}
+.bpb-badge{font-size:1.8rem;line-height:1;flex-shrink:0;}
+.bpb-info{flex:1;min-width:0;}
+.bpb-title{font-size:.88rem;font-weight:900;color:#fff;}
+.bpb-sub{font-size:.63rem;color:var(--dim);margin-top:.15rem;}
+.bpb-progress{font-size:.58rem;color:#3a3a65;letter-spacing:1.5px;text-transform:uppercase;flex-shrink:0;}
+.sp-fit-badge{font-size:.48rem;font-weight:900;letter-spacing:.8px;padding:1px 6px;border-radius:6px;pointer-events:none;display:inline-block;width:fit-content;}
 .sp-fit-ideal {background:rgba(39,174,96,.2); color:#2ecc71;border:1px solid #27ae60;}
 .sp-fit-strong{background:rgba(41,128,185,.2);color:#5dade2;border:1px solid #2980b9;}
 .sp-fit-fair  {background:rgba(243,156,18,.18);color:#f5b942;border:1px solid #d4ac0d;}
 .sp-fit-weak  {background:rgba(192,57,43,.18); color:#e57373;border:1px solid #c0392b;}
-.sp-card-note{font-size:.67rem;color:#a0a0c0;line-height:1.55;flex:1;}
-.sp-card-btn{margin-top:.85rem;width:100%;padding:.48rem;border-radius:.4rem;border:none;cursor:pointer;font-weight:700;font-size:.74rem;background:rgba(255,255,255,.08);color:#fff;transition:background .13s;letter-spacing:.3px;}
-.sp-card-btn:hover{background:rgba(255,255,255,.17);}
-.sp-card.sp-taken{opacity:.35;pointer-events:none;}
-.sp-taken-lbl{display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:.7rem;font-weight:900;color:#fff;background:rgba(0,0,0,.6);padding:3px 10px;border-radius:8px;pointer-events:none;}
-.sp-card.sp-taken .sp-taken-lbl{display:block;}
-.sp-pick-progress{text-align:center;font-size:.6rem;color:#393960;letter-spacing:1.5px;text-transform:uppercase;margin-top:1.1rem;}
+.st.pick-valid{cursor:pointer !important;box-shadow:0 0 0 2px #27ae60,0 0 12px rgba(39,174,96,.3);border-color:#27ae60 !important;}
+.st.pick-valid:hover{box-shadow:0 0 0 3px #2ecc71,0 0 20px rgba(46,204,113,.5);transform:translateY(-2px);}
+.st.pick-taken{opacity:.28;pointer-events:none;filter:grayscale(.5);}
+.st.pick-invalid{opacity:.38;pointer-events:none;}
+.pick-overlay-badge{position:absolute;top:.3rem;left:.3rem;}
+.board-picking .act-bar,.board-picking .hand-area{display:none !important;}
+.board-picking .phase-lbl{visibility:hidden;}
 </style>
 </head>
 <body>
@@ -488,19 +472,6 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   </div>
 </div>
 
-<!-- ══════════ STARTING POSITION PICKER ══════════ -->
-<div id="spPickOverlay">
-  <div class="sp-pick-box">
-    <div class="sp-pick-header">
-      <div class="sp-pick-soc-badge" id="spPickSocBadge"></div>
-      <h2 class="sp-pick-title" id="spPickTitle">Choose Your Starting Position</h2>
-      <p class="sp-pick-sub" id="spPickSub">Select the superpower you will control at game start</p>
-    </div>
-    <div class="sp-pick-cards" id="spPickCards"></div>
-    <div class="sp-pick-progress" id="spPickProgress"></div>
-  </div>
-</div>
-
 <!-- ══════════ SETTINGS OVERLAY ══════════ -->
 <div id="settingsOverlay" style="display:none;position:fixed;inset:0;z-index:400;" onclick="onSettingsOverlayClick(event)">
   <div id="settingsPanel" style="position:absolute;top:54px;right:16px;background:#18182a;border:1px solid #33334a;border-radius:12px;padding:20px 22px;box-shadow:0 12px 40px rgba(0,0,0,.7);min-width:230px;">
@@ -582,6 +553,15 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
       <button class="sim-spd-btn" onclick="setSimSpeed('turbo')">🚀 Turbo</button>
     </div>
     <button class="sim-pause" id="simPauseBtn" onclick="toggleSimPause()">⏸ Pause</button>
+  </div>
+  <!-- ── BOARD PICK BANNER ── -->
+  <div id="boardPickBanner">
+    <div class="bpb-badge" id="bpbBadge"></div>
+    <div class="bpb-info">
+      <div class="bpb-title" id="bpbTitle"></div>
+      <div class="bpb-sub"  id="bpbSub"></div>
+    </div>
+    <div class="bpb-progress" id="bpbProgress"></div>
   </div>
   <div style="display:flex;flex:1;overflow:hidden;">
   <div class="sidebar">
@@ -794,15 +774,19 @@ const SP_FIT = {
 // ═══════════════════════════════════════════════════════
 //  ANARCHIST STARTING OPTIONS (non-superpower states)
 // ═══════════════════════════════════════════════════════
+// ANA_STARTS: curated non-SP, non-SP-adjacent states for Anarchist auto-assign (AI/sim).
+// SPs: USA(0,0), USSR(4,0), CHN(0,4), UK(4,4). Adjacent cells excluded:
+//   USA→FRA,CAN,ITA  |  USSR→JPN,IND,CUB  |  CHN→BRZ,NGA,ARG  |  UK→IDN,VNM,AUS
 const ANA_STARTS = [
   { id:'GER', note:"The highest-resource non-superpower on the board. A capitalist republic at the centre of Europe — prosperous, over-administered, and ready to crack. 4 starting IP and access to every corner of the map." },
-  { id:'FRA', note:"The heart of Europe. Republican institutions are brittle under sustained pressure. Neighbouring states are ripe for anarchist seed — this is the board's most connected node outside the superpowers." },
-  { id:'IRN', note:"Oil wealth gives 4 starting IP — rare for a non-superpower. A religious capitalist state full of contradictions, perfectly positioned to spark chaos across the Middle East." },
-  { id:'BRZ', note:"South America's giant. Four starting IP, high patriotism, and continent-wide reach. An Anarchist based here can reshape the entire southern board before the superpowers notice." },
-  { id:'IND', note:"The subcontinent's military strength and mass population provide an imposing base. Communist culture and religious identity create internal contradictions ready to ignite." },
-  { id:'EGY', note:"The Arab world's pivot point. Communist culture and high patriotism make Egypt susceptible to mass upheaval. A gateway to Africa, the Gulf, and the Mediterranean at once." },
-  { id:'MEX', note:"In America's shadow but not under its thumb. Mexico's proximity to the USA makes it a persistent thorn in the superpower's side — an ideal launchpad for western hemisphere disruption." },
   { id:'TUR', note:"Straddling Europe and the Middle East, Turkey's crossroads position gives Anarchists unmatched reach. Religious culture and moderate military make destabilisation achievable early." },
+  { id:'MEX', note:"In America's shadow but not under its thumb. Mexico's proximity to the USA makes it a persistent thorn in the superpower's side — an ideal launchpad for western hemisphere disruption." },
+  { id:'EGY', note:"The Arab world's pivot point. Communist culture and high patriotism make Egypt susceptible to mass upheaval. A gateway to Africa, the Gulf, and the Mediterranean at once." },
+  { id:'IRN', note:"Oil wealth gives 4 starting IP — rare for a non-superpower. A religious capitalist state full of contradictions, perfectly positioned to spark chaos across the Middle East." },
+  { id:'PAK', note:"A nuclear-armed provisional state on the edge of collapse. Pakistan's instability and military clout make it a volatile launchpad — whoever controls it shapes South Asia." },
+  { id:'NKO', note:"An isolated communist rogue state with a nuclear arsenal and nothing to lose. Starting here keeps you clear of all superpowers while threatening both sides of the Pacific." },
+  { id:'SAU', note:"The richest non-superpower on the board — 5 resources. Control Saudi Arabia and you control the Gulf's oil arteries. Monarchic and religious, but money buys anything." },
+  { id:'ZAF', note:"Southern Africa's most powerful state. A nuclear-capable dictatorship at the bottom of the world, far from superpower interference and rich enough to project force northward." },
 ];
 
 // ═══════════════════════════════════════════════════════
@@ -1032,86 +1016,84 @@ function shuffle(a) {
 // ═══════════════════════════════════════════════════════
 //  STARTING POSITION PICKER
 // ═══════════════════════════════════════════════════════
-let spPickPlayers   = [];
-let spPickIdx       = 0;
-let spPickChoices   = [];
-let spPickDoneCallback = null;
+// ── Board-click starting position pick ──
+let boardPickActive  = false;
+let boardPickPlayers = [];   // human players awaiting a pick
+let boardPickIdx     = 0;    // which human player is currently picking
+let boardPickTaken   = [];   // state IDs already claimed (AI + earlier humans)
+let boardPickDone    = null; // callback when all picks complete
 
-function startSPPick(players, onDone) {
-  spPickPlayers      = players;
-  spPickIdx          = 0;
-  spPickChoices      = new Array(players.length).fill(null);
-  spPickDoneCallback = onDone;
-  document.getElementById('spPickOverlay').style.display = 'flex';
-  renderSPPicker();
+// Static adjacency check (uses INIT_STATES, safe before G exists)
+function isAdjacentToStatic(sid1, sid2) {
+  if (sid1 === sid2) return false;
+  const s1 = INIT_STATES.find(s => s.id === sid1);
+  const s2 = INIT_STATES.find(s => s.id === sid2);
+  if (!s1 || !s2) return false;
+  return Math.abs(s1.col - s2.col) <= 1 && Math.abs(s1.row - s2.row) <= 1;
 }
 
-function renderSPPicker() {
-  const p   = spPickPlayers[spPickIdx];
-  const soc = SOCIETIES[p.soc];
-  const fit = SP_FIT[p.soc];
-  const takenSPs = spPickChoices.filter(Boolean);
+// Is this state adjacent to any superpower?
+function isSpAdjacentStatic(sid) {
+  return INIT_STATES.some(sp => sp.sp && isAdjacentToStatic(sp.id, sid));
+}
 
-  const isAna = p.soc === 'ANA';
-
-  document.querySelector('.sp-pick-box').classList.toggle('ana-wide', isAna);
-  document.getElementById('spPickSocBadge').textContent = soc.icon;
-  document.getElementById('spPickTitle').textContent    =
-    p.isAI ? `${soc.icon} ${soc.name} — Choose Starting Position` : `${p.name} — Choose Your Starting Position`;
-  document.getElementById('spPickSub').textContent = isAna
-    ? `Playing as ${soc.name} · Anarchists start in the contested middle — choose your flashpoint`
-    : `Playing as ${soc.name} · Select the superpower you will control at game start`;
-
-  // ANA picks from curated non-SP states; all others pick from the 4 superpowers
-  const pool = isAna
-    ? ANA_STARTS.map(a => ({ ...INIT_STATES.find(s => s.id === a.id), _note: a.note }))
-    : INIT_STATES.filter(s => s.sp);
-
-  // Widen the grid for ANA (8 cards instead of 4)
-  document.getElementById('spPickCards').style.gridTemplateColumns = isAna ? 'repeat(4, 1fr)' : '';
-
-  document.getElementById('spPickCards').innerHTML = pool.map(sp => {
-    const taken = takenSPs.includes(sp.id);
-    let badge = '', note = '';
-    if (isAna) {
-      note  = sp._note;
-      badge = `<div class="sp-fit-badge sp-fit-fair">🏴 ANARCHIST</div>`;
-    } else {
-      const f = fit[sp.id];
-      note  = f.note;
-      badge = `<div class="sp-fit-badge sp-fit-${f.rating}">${f.icon} ${f.label}</div>`;
+// States the current picker may legally choose
+function validPickStates(player) {
+  return INIT_STATES.filter(s => {
+    if (boardPickTaken.includes(s.id)) return false;
+    if (player.soc === 'ANA') {
+      return !s.sp && !isSpAdjacentStatic(s.id);
     }
-    return `<div class="sp-card ${taken ? 'sp-taken' : ''}" onclick="selectSP('${sp.id}')">
-      <div class="sp-taken-lbl">TAKEN</div>
-      ${badge}
-      <div class="sp-card-flag">${FLAGS[sp.id] || '🌍'}</div>
-      <div class="sp-card-name">${sp.name}</div>
-      <div class="sp-card-ip">Starts with <strong>${sp.resources} 💠 IP</strong></div>
-      <div class="sp-card-stats">⚔ ${sp.military} &nbsp;☢ ${sp.nuclear} &nbsp;♥ ${sp.patriotism} &nbsp;💎 ${sp.resources}</div>
-      <div class="sp-card-note">${note}</div>
-      <button class="sp-card-btn" ${taken ? 'disabled' : ''}>Select ${sp.name}</button>
-    </div>`;
-  }).join('');
-
-  const total = spPickPlayers.length;
-  document.getElementById('spPickProgress').textContent =
-    total > 1 ? `Player ${spPickIdx + 1} of ${total}` : '';
+    return !!s.sp; // non-ANA: superpowers only
+  });
 }
 
-function selectSP(spId) {
-  // Hard guard: Anarchists cannot start in a superpower
-  const p = spPickPlayers[spPickIdx];
-  if (p && p.soc === 'ANA') {
-    const state = INIT_STATES.find(s => s.id === spId);
-    if (state && state.sp) return; // silently block — picker never shows these anyway
-  }
-  spPickChoices[spPickIdx] = spId;
-  spPickIdx++;
-  if (spPickIdx >= spPickPlayers.length) {
-    document.getElementById('spPickOverlay').style.display = 'none';
-    if (spPickDoneCallback) { const fn = spPickDoneCallback; spPickDoneCallback = null; fn(spPickChoices); }
+function enterBoardPickMode(humanPlayers, takenIds, onDone) {
+  boardPickActive  = true;
+  boardPickPlayers = humanPlayers;
+  boardPickIdx     = 0;
+  boardPickTaken   = takenIds.slice();
+  boardPickDone    = onDone;
+  document.getElementById('game').classList.add('board-picking');
+  updateBoardPickBanner();
+  renderBoard();
+}
+
+function updateBoardPickBanner() {
+  const p   = boardPickPlayers[boardPickIdx];
+  const soc = SOCIETIES[p.soc];
+  const isAna = p.soc === 'ANA';
+  document.getElementById('bpbBadge').textContent    = soc.icon;
+  document.getElementById('bpbBadge').style.color    = soc.color;
+  document.getElementById('bpbTitle').innerHTML      =
+    `<span style="color:${soc.color}">${p.name} (${soc.name})</span> — Choose your starting position`;
+  document.getElementById('bpbSub').textContent      = isAna
+    ? 'Anarchists cannot start in or adjacent to a superpower. Click a highlighted state.'
+    : 'Click a highlighted superpower to claim it as your starting position.';
+  const total = boardPickPlayers.length;
+  document.getElementById('bpbProgress').textContent =
+    total > 1 ? `${boardPickIdx + 1} / ${total} players` : '';
+  document.getElementById('boardPickBanner').classList.add('active');
+}
+
+function onBoardPick(sid) {
+  if (!boardPickActive) return;
+  const p     = boardPickPlayers[boardPickIdx];
+  const valid = validPickStates(p);
+  if (!valid.find(s => s.id === sid)) return; // invalid — ignore click
+  p.startSP = sid;
+  p.agents  = [sid];
+  boardPickTaken.push(sid);
+  boardPickIdx++;
+  if (boardPickIdx >= boardPickPlayers.length) {
+    // All human players picked — clean up and continue
+    boardPickActive = false;
+    document.getElementById('boardPickBanner').classList.remove('active');
+    document.getElementById('game').classList.remove('board-picking');
+    if (boardPickDone) { const fn = boardPickDone; boardPickDone = null; fn(); }
   } else {
-    renderSPPicker();
+    updateBoardPickBanner();
+    renderBoard();
   }
 }
 
@@ -1149,31 +1131,43 @@ function startGame() {
   }));
 
   if (gMode === 'sim') {
-    // All AI — auto-assign best superpower silently then start
+    // All AI — auto-assign silently and start
     autoAssignSP(players, []);
     finishStartGame(players);
-  } else {
-    // Show the picker for all human players, then auto-assign AI
-    const humanPlayers = players.filter(p => !p.isAI);
-    const aiPlayers    = players.filter(p =>  p.isAI);
-
-    if (humanPlayers.length === 0) {
-      autoAssignSP(players, []);
-      finishStartGame(players);
-      return;
-    }
-
-    startSPPick(humanPlayers, (choices) => {
-      const taken = [];
-      choices.forEach((spId, i) => {
-        humanPlayers[i].agents  = [spId];
-        humanPlayers[i].startSP = spId;
-        taken.push(spId);
-      });
-      autoAssignSP(aiPlayers, taken);
-      finishStartGame(players);
-    });
+    return;
   }
+
+  const humanPlayers = players.filter(p => !p.isAI);
+  const aiPlayers    = players.filter(p =>  p.isAI);
+
+  if (humanPlayers.length === 0) {
+    autoAssignSP(players, []);
+    finishStartGame(players);
+    return;
+  }
+
+  // Auto-assign AI players first so the board shows their chosen states as taken
+  const takenIds = [];
+  autoAssignSP(aiPlayers, takenIds);
+
+  // Show the board so players can scout, then enter board-click pick mode
+  G = {
+    players,
+    states: INIT_STATES.map(s => ({...s, entGov:0, entEcon:0, entCult:0})),
+    turn: 0, round: 1, phase: 'pick', drawn: false, vpThresh,
+    tension: 0, stability: 10,
+    selCard: null, selCardIdx: null, agentMode: false, infiltrateFrom: null,
+    pendingTarget: false,
+    burnMode: null, burnCard: null, burnCardIdx: null, burnMoveFrom: null,
+    log: [],
+  };
+  showScreen('game');
+  document.getElementById('simBar').classList.remove('show');
+  renderAll();
+
+  enterBoardPickMode(humanPlayers, takenIds, () => {
+    finishStartGame(players);
+  });
 }
 
 function finishStartGame(players) {
@@ -1264,8 +1258,18 @@ function renderBoard() {
       return `<span class="ent-badge ent-${level}" data-tip="${tip.replace(/"/g,"'")}">${label[0]}${level===3?'🔒':level}</span>`;
     };
 
+    // Board-pick mode: classify each state
+    let pickClass = '';
+    if (boardPickActive) {
+      const p     = boardPickPlayers[boardPickIdx];
+      const valid = validPickStates(p);
+      if (boardPickTaken.includes(s.id))         pickClass = 'pick-taken';
+      else if (valid.find(v => v.id === s.id))   pickClass = 'pick-valid';
+      else                                        pickClass = 'pick-invalid';
+    }
+
     const div = document.createElement('div');
-    div.className = `st ${s.sp?'superpower':''} gov-${s.gov} ${isValid?'valid-target':''}`;
+    div.className = `st ${s.sp?'superpower':''} gov-${s.gov} ${isValid?'valid-target':''} ${pickClass}`;
     div.dataset.sid = s.id;
     div.style.gridColumn = s.col+1;
     div.style.gridRow    = s.row+1;
@@ -1277,7 +1281,20 @@ function renderBoard() {
       div.style.borderColor = soc.color+'99';
     }
 
+    // Fit badge overlay during board-pick (only for valid states)
+    let pickBadge = '';
+    if (boardPickActive && pickClass === 'pick-valid') {
+      const picker = boardPickPlayers[boardPickIdx];
+      if (picker.soc === 'ANA') {
+        pickBadge = `<div class="pick-overlay-badge sp-fit-badge sp-fit-fair">🏴 START</div>`;
+      } else if (s.sp && SP_FIT[picker.soc]?.[s.id]) {
+        const f = SP_FIT[picker.soc][s.id];
+        pickBadge = `<div class="pick-overlay-badge sp-fit-badge sp-fit-${f.rating}">${f.icon} ${f.label}</div>`;
+      }
+    }
+
     div.innerHTML = `
+      ${pickBadge}
       <div class="st-banner">
         <span class="st-flag-lg">${FLAGS[s.id] || '🏳'}</span>
         <span class="st-name">${s.name}</span>
@@ -1308,6 +1325,7 @@ function renderBoard() {
       el.dataset.tip = `<b>${soc.icon} ${p.name}</b>${soc.name} — Agent stationed here`;
     });
     div.addEventListener('click', () => {
+      if (boardPickActive) { onBoardPick(s.id); return; }
       if (!G.pendingTarget && !G.agentMode && !G.burnMode) { showStatePopup(s.id); return; }
       onStateClic(s.id);
     });
@@ -2810,7 +2828,9 @@ function showScreen(id) {
 }
 
 function resetGame() {
-  document.getElementById('spPickOverlay').style.display = 'none';
+  boardPickActive = false;
+  document.getElementById('boardPickBanner').classList.remove('active');
+  document.getElementById('game').classList.remove('board-picking');
   showScreen('setup');
 }
 
