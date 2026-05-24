@@ -1010,7 +1010,7 @@ function waitForResume(fn) {
 function doDrawCard() {
   if (G.drawn) return notify('Already drew this turn.');
   const p = cur();
-  if (p.hand.length >= 8) return notify('Hand full (max 8).');
+  if (p.hand.length >= MAX_HAND) return notify(`Hand full (max ${MAX_HAND}).`);
   dealCard(p); dealCard(p); // draw 2
   G.drawn = true;
   logE(`${p.name} draws 2 cards.`);
@@ -1382,8 +1382,7 @@ function doEndTurn() {
   logE(`— ${next.name}'s turn (Round ${G.round}) —`);
   setPhase('draw');
   renderAll();
-  checkEndConditions();
-  if (next.isAI && !checkEndConditions()) {
+  if (!checkEndConditions() && next.isAI) {
     const delay = gMode==='sim' ? SIM_DELAYS[simSpeed] : 700;
     setTimeout(() => { if (!simPaused) aiTurn(); }, delay);
   }
@@ -1398,9 +1397,18 @@ function checkEndConditions() {
     showWorldEnd('☢ Nuclear Holocaust', 'The superpowers launched their arsenals. Civilization has ended. No one wins.', true);
     return true;
   }
-  // Societal collapse
+  // Societal collapse — highest VP wins
   if (G.stability <= 0) {
-    showWorldEnd('⚡ World Collapse', 'Global instability has spiraled out of control. All governments have fallen.', false);
+    const ranked = [...G.players].sort((a,b) => calcVP(b) - calcVP(a));
+    const topVP = calcVP(ranked[0]);
+    const topSoc = SOCIETIES[ranked[0].soc];
+    const tied = ranked.filter(p => calcVP(p) === topVP);
+    const winNote = topVP === 0
+      ? 'No society had established influence. The world collapses into chaos — no winner.'
+      : tied.length > 1
+        ? `${tied.map(p=>SOCIETIES[p.soc].icon+' '+p.name).join(' & ')} share the ruins with ${topVP} VP each.`
+        : `${topSoc.icon} ${ranked[0].name} emerges from the ruins with ${topVP} VP — a hollow victory.`;
+    showWorldEnd('⚡ World Collapse', winNote, false);
     return true;
   }
   // VP check
@@ -1626,16 +1634,31 @@ function skipCommentary() {
 // ═══════════════════════════════════════════════════════
 //  AI
 // ═══════════════════════════════════════════════════════
+const MAX_HAND = 7;
+
 function aiTurn() {
   if (!cur().isAI) return;
   const p = cur();
   const soc = SOCIETIES[p.soc];
 
-  // Draw
-  if (!G.drawn) { dealCard(p); dealCard(p); G.drawn=true; }
+  // Draw — only if under the hand limit
+  if (!G.drawn) {
+    if (p.hand.length < MAX_HAND) dealCard(p);
+    if (p.hand.length < MAX_HAND) dealCard(p);
+    G.drawn = true;
+  }
+
+  // Discard down to limit if somehow over (shouldn't happen, but safety net)
+  while (p.hand.length > MAX_HAND) {
+    const dropped = p.hand.shift();
+    p.discard.push(dropped);
+    logE(`${p.name} discards <strong>${dropped.name}</strong> (hand limit).`);
+  }
 
   // Find best card to play that advances VP condition
   const playable = p.hand.map((c,i)=>({c,i})).filter(({c})=>p.ip>=c.cost);
+  let played = false;
+
   if (playable.length > 0) {
     playable.sort((a,b)=>b.c.cost-a.c.cost);
     const {c,i} = playable[0];
@@ -1643,20 +1666,16 @@ function aiTurn() {
     // Find a good target state
     let targetSid = null;
     if (c.power) {
-      // Power card: target the best state globally that, after the power effect, would score VP
-      // Prefer states not already owned, that would qualify after transformation
       const best = G.states.filter(s => !p.agents.includes(s.id) && !(c.soc==='THE' && s.sp))
         .sort((a,b)=>((soc.vpCheck(b)?1:0)-(soc.vpCheck(a)?1:0)))[0];
       if (best) targetSid = best.id;
       else targetSid = G.states.filter(s=>!(c.soc==='THE'&&s.sp))[0]?.id;
     } else if (c.needsAgent) {
       const agentStates = G.states.filter(s=>p.agents.includes(s.id));
-      // Prefer states that, when modified, satisfy our VP condition
       const notVP = agentStates.filter(s=>!soc.vpCheck(s));
       if (notVP.length) targetSid = notVP[0].id;
       else if (agentStates.length) targetSid = agentStates[0].id;
     } else {
-      // Recruit: place adjacent to an agent
       const adjStates = G.states.filter(s=>!p.agents.includes(s.id) && isAdjacentToAgent(s.id,p));
       if (adjStates.length) targetSid = adjStates[0].id;
     }
@@ -1669,16 +1688,27 @@ function aiTurn() {
       applyEffect(c.effect, G.players.indexOf(p), targetSid);
       logE(`${p.name} (AI) plays <strong>${c.name}</strong>${targetSid?' on '+getState(targetSid).name:''}.`);
       renderAll();
+      played = true;
 
-      // In sim mode, pause and explain the play before continuing to end turn
       if (gMode === 'sim') {
         showCommentary(p, c, targetSid, () => {
           const aiDelay = Math.floor(SIM_DELAYS[simSpeed]*0.6);
           setTimeout(() => { if (!simPaused) doEndTurn(); else waitForResume(doEndTurn); }, aiDelay);
         });
-        return; // wait for commentary dismiss
+        return;
       }
     }
+  }
+
+  // No useful play found — burn the cheapest card for +2 IP to avoid dead hand buildup
+  if (!played && p.hand.length >= 4) {
+    const sorted = [...p.hand].sort((a,b)=>a.cost-b.cost);
+    const burnIdx = p.hand.indexOf(sorted[0]);
+    const burned = p.hand.splice(burnIdx, 1)[0];
+    p.discard.push(burned);
+    p.ip += 2;
+    logE(`${p.name} burns <strong>${burned.name}</strong> for +2 IP (no valid play).`);
+    renderAll();
   }
 
   const aiDelay = gMode==='sim' ? Math.floor(SIM_DELAYS[simSpeed]*0.6) : 500;
