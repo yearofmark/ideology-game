@@ -352,6 +352,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .sp-card:hover{border-color:rgba(255,255,255,.28);transform:translateY(-2px);background:#1f1f3a;}
 .sp-card-flag{font-size:2rem;margin-bottom:.3rem;line-height:1;}
 .sp-card-name{font-size:1rem;font-weight:900;margin-bottom:.25rem;color:#fff;}
+.sp-card-ip{font-size:.72rem;color:#ccc;margin-bottom:.4rem;}
+.sp-card-ip strong{color:#f39c12;}
 .sp-card-stats{font-size:.62rem;color:var(--dim);margin-bottom:.65rem;letter-spacing:.5px;}
 .sp-fit-badge{display:inline-block;font-size:.58rem;font-weight:900;letter-spacing:1.2px;padding:2px 8px;border-radius:10px;margin-bottom:.6rem;width:fit-content;}
 .sp-fit-ideal {background:rgba(39,174,96,.2); color:#2ecc71;border:1px solid #27ae60;}
@@ -1020,6 +1022,7 @@ function renderSPPicker() {
       <div class="sp-fit-badge sp-fit-${f.rating}">${f.icon} ${f.label}</div>
       <div class="sp-card-flag">${FLAGS[sp.id] || '🌍'}</div>
       <div class="sp-card-name">${sp.name}</div>
+      <div class="sp-card-ip">Starts with <strong>${sp.resources} 💠 IP</strong></div>
       <div class="sp-card-stats">⚔ ${sp.military} &nbsp;☢ ${sp.nuclear} &nbsp;♥ ${sp.patriotism} &nbsp;💎 ${sp.resources}</div>
       <div class="sp-card-note">${f.note}</div>
       <button class="sp-card-btn" ${taken ? 'disabled' : ''}>Select ${sp.name}</button>
@@ -1064,7 +1067,7 @@ function startGame() {
   const players = setupPlayers.map((p, i) => ({
     name: p.name, soc: p.soc,
     isAI: gMode==='solo' ? i>0 : gMode==='sim' ? true : false,
-    ip: 8, deck: buildDeck(p.soc), hand: [], discard: [], vpScore: 0,
+    ip: 0, deck: buildDeck(p.soc), hand: [], discard: [], vpScore: 0,
     agents: [], startSP: null,
   }));
 
@@ -1097,6 +1100,12 @@ function startGame() {
 }
 
 function finishStartGame(players) {
+  // Starting IP = the resources value of each player's chosen superpower
+  players.forEach(p => {
+    const sp = INIT_STATES.find(s => s.id === p.startSP);
+    p.ip = sp ? sp.resources : 3;
+  });
+
   const states = INIT_STATES.map(s => ({...s, entGov:0, entEcon:0, entCult:0}));
 
   G = {
