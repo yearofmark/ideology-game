@@ -64,6 +64,12 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .popup-card-note{font-size:.7rem;color:#f39c12;background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.2);padding:.4rem .65rem;border-radius:.4rem;}
 .popup-play-btn{width:100%;margin-top:.9rem;padding:.65rem;border-radius:.45rem;border:none;background:linear-gradient(135deg,#3498db,#2980b9);color:#fff;font-size:.82rem;font-weight:bold;cursor:pointer;letter-spacing:1px;}
 .popup-play-btn:hover{opacity:.88;}
+/* ── ENTRENCHMENT ── */
+.st-ent{display:flex;gap:3px;flex-wrap:wrap;padding:1px 4px 2px;}
+.ent-badge{font-size:.48rem;padding:1px 4px;border-radius:3px;font-weight:900;letter-spacing:.3px;cursor:default;}
+.ent-1{background:rgba(241,196,15,.12);color:#f1c40f;border:1px solid rgba(241,196,15,.3);}
+.ent-2{background:rgba(230,126,34,.12);color:#e67e22;border:1px solid rgba(230,126,34,.3);}
+.ent-3{background:rgba(231,76,60,.14);color:#e74c3c;border:1px solid rgba(231,76,60,.35);}
 .popup-burn-section{margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border);}
 .popup-burn-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:1.5px;color:#f39c12;margin-bottom:.5rem;}
 .popup-burn-btns{display:flex;gap:.4rem;}
@@ -653,7 +659,7 @@ function startGame() {
     startSP: p.sp,
   }));
 
-  const states = INIT_STATES.map(s => ({...s}));
+  const states = INIT_STATES.map(s => ({...s, entGov:0, entEcon:0, entCult:0}));
 
   G = {
     players, states,
@@ -707,6 +713,15 @@ function renderBoard() {
     const playerAgents = G.players.map((p,i) => p.agents.includes(s.id) ? i : -1).filter(i=>i>=0);
     const isValid = G.pendingTarget && isValidTarget(s.id);
 
+    const eGov  = entLevel(s.entGov  || 0);
+    const eEcon = entLevel(s.entEcon || 0);
+    const eCult = entLevel(s.entCult || 0);
+    const entBadge = (level, label, attr) => {
+      if (level === 0) return '';
+      const tip = `<b>🔒 ${label} ${ENT_NAMES[level]}</b>+${level} IP extra to flip${level>=3?' · Requires 3+ IP card':''}. Resets when flipped.`;
+      return `<span class="ent-badge ent-${level}" data-tip="${tip.replace(/"/g,"'")}">${label[0]}${level===3?'🔒':level}</span>`;
+    };
+
     const div = document.createElement('div');
     div.className = `st ${s.sp?'superpower':''} gov-${s.gov} ${isValid?'valid-target':''}`;
     div.dataset.sid = s.id;
@@ -736,6 +751,7 @@ function renderBoard() {
         <span class="ss" data-tip-key="stat-patriotism"><span class="ssi">♥</span>${s.patriotism}</span>
         <span class="ss" data-tip-key="stat-resources"><span class="ssi">💎</span>${s.resources}</span>
       </div>
+      ${(eGov||eEcon||eCult) ? `<div class="st-ent">${entBadge(eGov,'Gov','entGov')}${entBadge(eEcon,'Eco','entEcon')}${entBadge(eCult,'Cul','entCult')}</div>` : ''}
       <div class="st-agents">
         ${playerAgents.map(pi => {
           const soc = SOCIETIES[G.players[pi].soc];
@@ -991,13 +1007,40 @@ function onStateClic(sid) {
   }
 }
 
+// ── Entrenchment helpers ──────────────────────────────
+const GOV_FLIP_FX  = ['gov_step','lobbying','assassinate','reform_gov','coup','mutiny','revolution'];
+const ECON_FLIP_FX = ['set_capitalist','set_capitalist2','set_communist'];
+const CULT_FLIP_FX = ['set_religious','set_secular'];
+const ENT_NAMES    = ['','Established','Entrenched','Fortified'];
+const ENT_COLORS   = ['','#f1c40f','#e67e22','#e74c3c'];
+
+function entLevel(n) { return Math.min(3, Math.floor((n||0) / 2)); }
+
+function getFlipInfo(card, sid) {
+  if (!sid) return { extra:0, blocked:false, attr:null };
+  const s = getState(sid);
+  if (!s) return { extra:0, blocked:false, attr:null };
+  let raw = 0, attr = null;
+  if (GOV_FLIP_FX.includes(card.effect))  { raw = s.entGov  || 0; attr = 'Government'; }
+  if (ECON_FLIP_FX.includes(card.effect)) { raw = s.entEcon || 0; attr = 'Economy'; }
+  if (CULT_FLIP_FX.includes(card.effect)) { raw = s.entCult || 0; attr = 'Culture'; }
+  const level   = entLevel(raw);
+  const blocked = level >= 3 && card.cost < 3;
+  return { extra: level, blocked, attr, level };
+}
+
 function doPlayCard(targetSid) {
   if (!G.selCard) return;
   const p = cur();
-  if (p.ip < G.selCard.cost) return notify('Not enough IP.');
+
+  // Entrenchment gate
+  const flip = getFlipInfo(G.selCard, targetSid);
+  if (flip.blocked) return notify(`🔒 Fortified! ${flip.attr} is entrenched at max level. Only cards costing 3+ IP can break it.`);
+  if (p.ip < G.selCard.cost + flip.extra) return notify(`Not enough IP. ${flip.attr || 'Attribute'} is ${ENT_NAMES[flip.level]} — costs +${flip.extra} IP extra to flip.`);
 
   const card = { ...G.selCard };
-  p.ip -= card.cost;
+  p.ip -= card.cost + flip.extra;
+  if (flip.extra > 0) logE(`🔒 ${flip.attr} entrenchment broken — ${p.name} spent +${flip.extra} extra IP.`);
   p.hand.splice(G.selCardIdx, 1);
   p.discard.push(card);
 
@@ -1028,28 +1071,29 @@ function applyEffect(effect, pIdx, sid) {
       if (s && !s.sp) {
         const i = GOV_ORDER.indexOf(s.gov);
         s.gov = GOV_ORDER[(i+1) % GOV_ORDER.length];
+        s.entGov = 0;
       }
       break;
     case 'lobbying':
-      if (s) { s.gov = 'republic'; dealCard(p); }
+      if (s) { s.gov = 'republic'; s.entGov = 0; dealCard(p); }
       break;
     case 'assassinate':
-      if (s) { s.gov = 'provisional'; logE(`${s.name}'s government falls to Provisional.`); }
+      if (s) { s.gov = 'provisional'; s.entGov = 0; logE(`${s.name}'s government falls to Provisional.`); }
       break;
     case 'agitate':
       if (s) {
         const roll = Math.floor(Math.random()*4);
-        if (roll===0) { s.gov = GOV_ORDER[Math.floor(Math.random()*4)]; logE(`${s.name} undergoes political shift.`); }
+        if (roll===0) { s.gov = GOV_ORDER[Math.floor(Math.random()*4)]; s.entGov = 0; logE(`${s.name} undergoes political shift.`); }
         else if (roll===1) { s.patriotism = Math.min(5, s.patriotism+1); }
         else if (roll===2) { s.military = Math.max(0, s.military-1); }
         else { s.resources = Math.max(0, s.resources-1); }
       }
       break;
     case 'reform_gov':
-      if (s) { s.gov='republic'; s.patriotism=Math.min(5,s.patriotism+1); }
+      if (s) { s.gov='republic'; s.entGov=0; s.patriotism=Math.min(5,s.patriotism+1); }
       break;
     case 'coup':
-      if (s) { s.gov='dictatorship'; s.military=Math.min(10,s.military+2); addTension(1); }
+      if (s) { s.gov='dictatorship'; s.entGov=0; s.military=Math.min(10,s.military+2); addTension(1); }
       break;
     case 'recruit':
       if (sid && !p.agents.includes(sid)) p.agents.push(sid);
@@ -1072,19 +1116,19 @@ function applyEffect(effect, pIdx, sid) {
       if (s) s.military=Math.min(10,s.military+3);
       break;
     case 'mutiny':
-      if (s) { s.military=Math.floor(s.military/2); s.gov='provisional'; addTension(1); }
+      if (s) { s.military=Math.floor(s.military/2); s.gov='provisional'; s.entGov=0; addTension(1); }
       break;
     case 'disarm':
       if (s) { s.nuclear=Math.max(0,s.nuclear-2); addTension(-2); }
       break;
     case 'revolution':
-      if (s) { s.gov='provisional'; s.patriotism=Math.min(5,s.patriotism+3); addTension(1); }
+      if (s) { s.gov='provisional'; s.entGov=0; s.patriotism=Math.min(5,s.patriotism+3); addTension(1); }
       break;
     case 'set_religious':
-      if (s) { s.cult='religious'; s.patriotism=Math.min(5,s.patriotism+2); }
+      if (s) { s.cult='religious'; s.entCult=0; s.patriotism=Math.min(5,s.patriotism+2); }
       break;
     case 'set_secular':
-      if (s) { s.cult='secular'; s.patriotism=Math.min(5,s.patriotism+2); }
+      if (s) { s.cult='secular'; s.entCult=0; s.patriotism=Math.min(5,s.patriotism+2); }
       break;
     case 'add_patriotism':
       if (s) s.patriotism=Math.min(5,s.patriotism+3);
@@ -1094,10 +1138,10 @@ function applyEffect(effect, pIdx, sid) {
       break;
     case 'set_capitalist':
     case 'set_capitalist2':
-      if (s) { s.econ='capitalist'; if(effect==='set_capitalist') p.ip+=3; else s.resources=Math.min(5,s.resources+2); }
+      if (s) { s.econ='capitalist'; s.entEcon=0; if(effect==='set_capitalist') p.ip+=3; else s.resources=Math.min(5,s.resources+2); }
       break;
     case 'set_communist':
-      if (s) { s.econ='communist'; s.resources=Math.min(5,s.resources+2); }
+      if (s) { s.econ='communist'; s.entEcon=0; s.resources=Math.min(5,s.resources+2); }
       break;
     case 'sanctions':
       if (s) {
@@ -1129,7 +1173,11 @@ function doEndTurn() {
   if (Math.random() < 0.3) G.stability = Math.min(10, G.stability+1);
 
   G.turn = (G.turn+1) % G.players.length;
-  if (G.turn===0) G.round++;
+  if (G.turn===0) {
+    G.round++;
+    // Tick entrenchment — unchanged attributes grow more settled each round
+    G.states.forEach(s => { s.entGov++; s.entEcon++; s.entCult++; });
+  }
   G.drawn = false; G.phase = 'draw';
   G.selCard=null; G.selCardIdx=null; G.pendingTarget=false; G.agentMode=false; G.infiltrateFrom=null;
   G.burnMode=null; G.burnCard=null; G.burnCardIdx=null; G.burnMoveFrom=null;
@@ -1298,15 +1346,15 @@ function showStatePopup(sid) {
 
     <div class="popup-attrs">
       <div class="popup-attr">
-        <div class="popup-attr-lbl">Government</div>
+        <div class="popup-attr-lbl">Government ${entLevel(s.entGov||0)>0?`<span style="color:${ENT_COLORS[entLevel(s.entGov)]};font-size:.55rem">🔒${ENT_NAMES[entLevel(s.entGov||0)]}</span>`:''}</div>
         <div class="popup-attr-val">${GOV_ICONS[s.gov]} ${GOV_NAMES[s.gov]}</div>
       </div>
       <div class="popup-attr">
-        <div class="popup-attr-lbl">Economy</div>
+        <div class="popup-attr-lbl">Economy ${entLevel(s.entEcon||0)>0?`<span style="color:${ENT_COLORS[entLevel(s.entEcon)]};font-size:.55rem">🔒${ENT_NAMES[entLevel(s.entEcon||0)]}</span>`:''}</div>
         <div class="popup-attr-val" style="color:${s.econ==='capitalist'?'#f39c12':'#e74c3c'}">${s.econ==='capitalist'?'💹 Capitalist':'☭ Communist'}</div>
       </div>
       <div class="popup-attr">
-        <div class="popup-attr-lbl">Culture</div>
+        <div class="popup-attr-lbl">Culture ${entLevel(s.entCult||0)>0?`<span style="color:${ENT_COLORS[entLevel(s.entCult)]};font-size:.55rem">🔒${ENT_NAMES[entLevel(s.entCult||0)]}</span>`:''}</div>
         <div class="popup-attr-val" style="color:${s.cult==='secular'?'#3498db':'#9b59b6'}">${s.cult==='secular'?'🔬 Secular':'✝ Religious'}</div>
       </div>
     </div>
