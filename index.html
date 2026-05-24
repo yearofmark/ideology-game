@@ -271,25 +271,39 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .sim-pause{padding:3px 10px;border-radius:4px;border:1px solid rgba(241,196,15,.4);background:rgba(241,196,15,.07);color:#f1c40f;font-size:.62rem;cursor:pointer;}
 .sim-pause:hover{background:rgba(241,196,15,.15);}
 
-/* ── AI COMMENTARY OVERLAY ── */
-.commentary-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;display:none;align-items:center;justify-content:center;}
+/* ── AI COMMENTARY POPUP ── */
+.commentary-overlay{position:fixed;inset:0;background:rgba(0,0,0,.80);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem;}
 .commentary-overlay.show{display:flex;}
-.commentary-box{background:#13132a;border:1px solid #2e2e50;border-radius:1rem;padding:1.6rem 1.8rem 1.4rem;width:min(480px,92vw);box-shadow:0 1.5rem 4rem rgba(0,0,0,.75);position:relative;}
-.comm-header{display:flex;align-items:center;gap:.7rem;margin-bottom:1rem;padding-bottom:.85rem;border-bottom:1px solid #2a2a45;}
-.comm-avatar{width:2.4rem;height:2.4rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;border:2px solid rgba(255,255,255,.15);}
+.commentary-box{background:#0f0f22;border:1px solid #3a3a60;border-radius:1.2rem;width:min(600px,96vw);max-height:90vh;overflow-y:auto;box-shadow:0 2rem 6rem rgba(0,0,0,.85);display:flex;flex-direction:column;}
+/* top colour band */
+.comm-band{height:5px;border-radius:1.2rem 1.2rem 0 0;flex-shrink:0;}
+.comm-body{padding:1.8rem 2rem 1.6rem;display:flex;flex-direction:column;gap:1.1rem;}
+/* header row */
+.comm-header{display:flex;align-items:center;gap:1rem;}
+.comm-avatar{width:3rem;height:3rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;border:2px solid rgba(255,255,255,.18);}
 .comm-who{flex:1;}
-.comm-name{font-size:.85rem;font-weight:900;letter-spacing:.3px;}
-.comm-society{font-size:.62rem;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-top:1px;}
-.comm-card-pill{display:flex;align-items:center;gap:.4rem;padding:.25rem .7rem;border-radius:2rem;font-size:.75rem;font-weight:bold;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);}
-.comm-card-icon{font-size:1rem;}
-.comm-target{margin:.75rem 0;padding:.5rem .75rem;border-radius:.5rem;background:rgba(255,255,255,.04);border:1px solid #2a2a45;font-size:.75rem;color:#ccc;}
-.comm-target b{color:#fff;}
-.comm-reasoning{font-size:.82rem;line-height:1.65;color:#c8c8d8;margin:.75rem 0 1.1rem;}
+.comm-name{font-size:1.05rem;font-weight:900;letter-spacing:.3px;}
+.comm-society{font-size:.68rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--dim);margin-top:2px;}
+/* card played block */
+.comm-card-block{display:flex;align-items:center;gap:.9rem;background:rgba(255,255,255,.04);border:1px solid #2e2e50;border-radius:.7rem;padding:.8rem 1rem;}
+.comm-card-icon{font-size:1.8rem;flex-shrink:0;}
+.comm-card-info{}
+.comm-card-name{font-size:.95rem;font-weight:900;margin-bottom:2px;}
+.comm-card-meta{font-size:.68rem;color:var(--dim);letter-spacing:.5px;}
+/* target state */
+.comm-target{background:rgba(255,255,255,.03);border:1px solid #2a2a45;border-radius:.6rem;padding:.75rem 1rem;font-size:.8rem;color:#ccc;line-height:1.55;}
+.comm-target-lbl{font-size:.58rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:.35rem;}
+.comm-target b{color:#fff;font-size:.88rem;}
+/* reasoning */
+.comm-reasoning-lbl{font-size:.58rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);}
+.comm-reasoning{font-size:.92rem;line-height:1.75;color:#d4d4e8;}
 .comm-reasoning em{color:#f1c40f;font-style:normal;font-weight:bold;}
-.comm-continue{width:100%;padding:.65rem;border-radius:.45rem;border:none;background:linear-gradient(135deg,#2980b9,#1a5276);color:#fff;font-size:.82rem;font-weight:bold;cursor:pointer;letter-spacing:1px;transition:opacity .15s;}
+/* footer buttons */
+.comm-footer{display:flex;flex-direction:column;gap:.5rem;padding:0 2rem 1.6rem;}
+.comm-continue{padding:.8rem;border-radius:.5rem;border:none;background:linear-gradient(135deg,#2471a3,#1a5276);color:#fff;font-size:.9rem;font-weight:bold;cursor:pointer;letter-spacing:1px;transition:opacity .15s;}
 .comm-continue:hover{opacity:.85;}
-.comm-turn-skip{margin-top:.5rem;width:100%;padding:.4rem;border-radius:.35rem;border:1px solid var(--border);background:transparent;color:var(--dim);font-size:.7rem;cursor:pointer;}
-.comm-turn-skip:hover{color:var(--text);background:rgba(255,255,255,.04);}
+.comm-turn-skip{padding:.45rem;border-radius:.4rem;border:1px solid var(--border);background:transparent;color:var(--dim);font-size:.72rem;cursor:pointer;transition:all .13s;}
+.comm-turn-skip:hover{color:var(--text);background:rgba(255,255,255,.05);}
 </style>
 </head>
 <body>
@@ -317,18 +331,35 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 <!-- ══════════ AI COMMENTARY ══════════ -->
 <div class="commentary-overlay" id="commOverlay">
   <div class="commentary-box">
-    <div class="comm-header">
-      <div class="comm-avatar" id="commAvatar"></div>
-      <div class="comm-who">
-        <div class="comm-name" id="commName"></div>
-        <div class="comm-society" id="commSociety"></div>
+    <div class="comm-band" id="commBand"></div>
+    <div class="comm-body">
+      <div class="comm-header">
+        <div class="comm-avatar" id="commAvatar"></div>
+        <div class="comm-who">
+          <div class="comm-name" id="commName"></div>
+          <div class="comm-society" id="commSociety"></div>
+        </div>
       </div>
-      <div class="comm-card-pill" id="commCard"></div>
+      <div class="comm-card-block" id="commCardBlock">
+        <div class="comm-card-icon" id="commCardIcon"></div>
+        <div class="comm-card-info">
+          <div class="comm-card-name" id="commCardName"></div>
+          <div class="comm-card-meta" id="commCardMeta"></div>
+        </div>
+      </div>
+      <div id="commTarget" style="display:none">
+        <div class="comm-target-lbl">Target State</div>
+        <div class="comm-target" id="commTargetBody"></div>
+      </div>
+      <div>
+        <div class="comm-reasoning-lbl">Strategic Reasoning</div>
+        <div class="comm-reasoning" id="commReasoning"></div>
+      </div>
     </div>
-    <div class="comm-target" id="commTarget" style="display:none"></div>
-    <div class="comm-reasoning" id="commReasoning"></div>
-    <button class="comm-continue" onclick="resumeFromCommentary()">▶ Continue</button>
-    <button class="comm-turn-skip" onclick="skipCommentary()">Skip commentary for this game</button>
+    <div class="comm-footer">
+      <button class="comm-continue" id="commContinueBtn" onclick="resumeFromCommentary()">▶ Continue</button>
+      <button class="comm-turn-skip" onclick="skipCommentary()">Skip commentary for this game</button>
+    </div>
   </div>
 </div>
 
@@ -1595,28 +1626,57 @@ function showCommentary(player, card, targetSid, onContinue) {
   if (commSkipped || gMode !== 'sim') { onContinue(); return; }
   const soc = SOCIETIES[player.soc];
   const target = targetSid ? getState(targetSid) : null;
+  const isPwr = !!card.power;
+  const accentColor = isPwr ? '#ffd700' : soc.color;
 
-  document.getElementById('commAvatar').textContent = soc.icon;
-  document.getElementById('commAvatar').style.background = soc.color+'33';
-  document.getElementById('commAvatar').style.borderColor = soc.color+'66';
+  // Colour band at top
+  document.getElementById('commBand').style.background =
+    isPwr ? 'linear-gradient(90deg,#b8860b,#ffd700,#b8860b)' : soc.color;
+
+  // Avatar
+  const av = document.getElementById('commAvatar');
+  av.textContent = soc.icon;
+  av.style.background = soc.color+'33';
+  av.style.borderColor = soc.color+'88';
+
+  // Who
   document.getElementById('commName').textContent = player.name;
   document.getElementById('commName').style.color = soc.color;
-  document.getElementById('commSociety').textContent = soc.name + ' · ' + (card.power ? 'POWER CARD' : card.type.toUpperCase());
+  document.getElementById('commSociety').textContent =
+    soc.name + (isPwr ? '  ·  👑 POWER CARD' : '  ·  ' + card.type.toUpperCase());
 
-  const pill = document.getElementById('commCard');
-  pill.innerHTML = `<span class="comm-card-icon">${card.icon}</span> ${card.name} · ${card.cost}💠`;
-  pill.style.color = card.power ? '#ffd700' : '#ccc';
-  pill.style.borderColor = card.power ? 'rgba(255,215,0,.3)' : 'rgba(255,255,255,.12)';
+  // Card block
+  document.getElementById('commCardIcon').textContent = card.icon;
+  document.getElementById('commCardName').textContent = card.name;
+  document.getElementById('commCardName').style.color = accentColor;
+  document.getElementById('commCardMeta').textContent =
+    `${card.cost} 💠 IP  ·  ${isPwr ? 'Society exclusive · 1 per deck' : card.type}`;
+  document.getElementById('commCardBlock').style.borderColor =
+    isPwr ? 'rgba(255,215,0,.3)' : '#2e2e50';
 
-  const tEl = document.getElementById('commTarget');
+  // Target state
+  const tWrap = document.getElementById('commTarget');
   if (target) {
-    tEl.style.display = '';
-    tEl.innerHTML = `🎯 Target: <b>${target.name}</b> · ${target.gov} · ${target.econ} · ${target.cult} · Mil ${target.military} · Nuc ${target.nuclear} · Pat ${target.patriotism}`;
+    tWrap.style.display = '';
+    const GOV_ICONS_LOCAL = {republic:'🗳',monarchy:'👑',dictatorship:'✊',provisional:'⚡'};
+    document.getElementById('commTargetBody').innerHTML =
+      `<b>${FLAGS[target.id]||'🏳'} ${target.name}</b><br>`
+      + `${GOV_ICONS_LOCAL[target.gov]||''} ${target.gov} &nbsp;·&nbsp; `
+      + `${target.econ==='capitalist'?'💹':'☭'} ${target.econ} &nbsp;·&nbsp; `
+      + `${target.cult==='secular'?'🔬':'✝'} ${target.cult}<br>`
+      + `⚔ Military ${target.military} &nbsp;·&nbsp; ☢ Nuclear ${target.nuclear} &nbsp;·&nbsp; ♥ Patriotism ${target.patriotism}`;
   } else {
-    tEl.style.display = 'none';
+    tWrap.style.display = 'none';
   }
 
+  // Reasoning
   document.getElementById('commReasoning').innerHTML = genReasoning(player, card, targetSid);
+
+  // Continue button colour
+  document.getElementById('commContinueBtn').style.background =
+    isPwr ? 'linear-gradient(135deg,#b8860b,#8b6914)'
+          : `linear-gradient(135deg,${soc.color},${soc.color}88)`;
+
   commResumeCallback = onContinue;
   document.getElementById('commOverlay').classList.add('show');
 }
