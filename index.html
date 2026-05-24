@@ -315,6 +315,32 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .comm-continue:hover{opacity:.85;}
 .comm-turn-skip{padding:.45rem;border-radius:.4rem;border:1px solid var(--border);background:transparent;color:var(--dim);font-size:.72rem;cursor:pointer;transition:all .13s;}
 .comm-turn-skip:hover{color:var(--text);background:rgba(255,255,255,.05);}
+/* ── TURN NARRATION ── */
+.comm-phase-wrap{display:flex;align-items:center;justify-content:space-between;padding-bottom:.55rem;border-bottom:1px solid #1e1e38;}
+.comm-phase-name{font-size:.58rem;text-transform:uppercase;letter-spacing:2px;color:var(--dim);}
+.comm-phase-num{font-size:.58rem;color:#393960;font-weight:bold;}
+.comm-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:.55rem .4rem;}
+.comm-stat-item{display:flex;flex-direction:column;gap:2px;}
+.comm-stat-lbl{font-size:.55rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);}
+.comm-stat-val{font-size:.95rem;font-weight:900;}
+.comm-mini-cards{display:flex;gap:.65rem;flex-wrap:wrap;}
+.comm-mini-card{flex:1;min-width:100px;background:rgba(255,255,255,.04);border:1px solid #2a2a45;border-top-width:3px;border-radius:.55rem;padding:.6rem .7rem;display:flex;flex-direction:column;align-items:center;text-align:center;gap:.3rem;cursor:help;transition:background .13s;}
+.comm-mini-card:hover{background:rgba(255,255,255,.08);}
+.comm-mini-icon{font-size:1.4rem;}
+.comm-mini-name{font-size:.75rem;font-weight:900;}
+.comm-mini-type{font-size:.54rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);}
+.comm-mini-cost{font-size:.65rem;color:#f39c12;}
+.comm-opt{display:grid;grid-template-columns:1.8rem 1fr auto;align-items:start;gap:.5rem;padding:.5rem .65rem;border-radius:.45rem;border:1px solid #252540;background:rgba(255,255,255,.025);margin-bottom:.3rem;}
+.comm-opt.best{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.07);}
+.comm-opt-num{font-size:.82rem;color:var(--dim);padding-top:1px;}
+.comm-opt.best .comm-opt-num{color:#f1c40f;}
+.comm-opt-body{min-width:0;}
+.comm-opt-name{font-size:.82rem;font-weight:bold;color:#bbb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.comm-opt.best .comm-opt-name{color:#fff;}
+.comm-opt-target{font-size:.68rem;color:#888;margin-top:2px;}
+.comm-opt-score{font-size:.68rem;color:var(--dim);font-weight:bold;white-space:nowrap;padding-top:3px;}
+.comm-opt.best .comm-opt-score{color:#f1c40f;}
+.comm-opt-empty{font-size:.78rem;color:var(--dim);padding:.5rem 0;}
 </style>
 </head>
 <body>
@@ -351,6 +377,11 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
           <div class="comm-society" id="commSociety"></div>
         </div>
       </div>
+      <!-- Phase label (narrated turns) -->
+      <div id="commPhaseWrap" class="comm-phase-wrap" style="display:none">
+        <span class="comm-phase-name" id="commPhaseLbl"></span>
+        <span class="comm-phase-num" id="commPhaseStep"></span>
+      </div>
       <!-- Opening brief (shown instead of card block at game start) -->
       <div id="commOpening" style="display:none">
         <div class="comm-target-lbl">Starting Position</div>
@@ -359,6 +390,20 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
           <div class="comm-target-lbl">VP Objective</div>
           <div class="comm-target" id="commOpeningVP"></div>
         </div>
+      </div>
+      <!-- Draw phase (narrated turns) -->
+      <div id="commDrawSection" style="display:none">
+        <div class="comm-target-lbl">Cards Drawn This Turn</div>
+        <div id="commDrawCards" class="comm-mini-cards" style="margin-top:.45rem"></div>
+      </div>
+      <!-- Decision options (narrated turns) -->
+      <div id="commOptionsSection" style="display:none">
+        <div class="comm-target-lbl" id="commOptionsLbl">Options Evaluated</div>
+        <div id="commOptionsList" style="margin-top:.4rem"></div>
+      </div>
+      <!-- General info block (turn start / end turn) -->
+      <div id="commInfoSection" style="display:none">
+        <div id="commInfoContent"></div>
       </div>
       <!-- Card play (shown for normal plays) -->
       <div id="commCardSection">
@@ -1871,9 +1916,9 @@ function showOpeningCommentary(player, onContinue) {
   document.getElementById('commName').style.color = soc.color;
   document.getElementById('commSociety').textContent = soc.name + '  ·  OPENING BRIEF';
 
-  // Show opening section, hide card section
+  // Show opening section, hide everything else
+  narrHideAll();
   document.getElementById('commOpening').style.display = '';
-  document.getElementById('commCardSection').style.display = 'none';
   document.getElementById('commReasoningLbl').textContent = 'Strategy';
 
   // Starting state block
@@ -1908,8 +1953,8 @@ function showCommentary(player, card, targetSid, onContinue) {
   const isPwr = !!card.power;
   const accentColor = isPwr ? '#ffd700' : soc.color;
 
-  // Restore card-play layout
-  document.getElementById('commOpening').style.display = 'none';
+  // Restore card-play layout, hide narration sections
+  narrHideAll();
   document.getElementById('commCardSection').style.display = '';
   document.getElementById('commReasoningLbl').textContent = 'Strategic Reasoning';
   document.getElementById('commContinueBtn').textContent = '▶ Continue';
@@ -1983,77 +2028,37 @@ function skipCommentary() {
 // ═══════════════════════════════════════════════════════
 const MAX_HAND = 7;
 
-function aiTurn() {
-  if (!cur().isAI) return;
-  const p = cur();
+// Compute all scored (card, target) options for player p
+function computeAIOptions(p) {
   const soc = SOCIETIES[p.soc];
-
-  // Draw — only if under the hand limit
-  if (!G.drawn) {
-    if (p.hand.length < MAX_HAND) dealCard(p);
-    if (p.hand.length < MAX_HAND) dealCard(p);
-    G.drawn = true;
-  }
-
-  // Discard down to limit if somehow over (shouldn't happen, but safety net)
-  while (p.hand.length > MAX_HAND) {
-    const dropped = p.hand.shift();
-    p.discard.push(dropped);
-    logE(`${p.name} discards <strong>${dropped.name}</strong> (hand limit).`);
-  }
-
-  // Build all viable (card, target) options and score each
   const playable = p.hand.map((c,i)=>({c,i})).filter(({c})=>p.ip>=c.cost);
-  let played = false;
 
-  // Returns candidate target states for a given card
   function aiTargets(c) {
-    if (c.global) return [null]; // global events need no target
-    if (c.power) {
-      return G.states.filter(s => !p.agents.includes(s.id) && !(c.soc==='THE' && s.sp));
-    }
-    if (c.effect === 'recruit') {
-      return G.states.filter(s => !p.agents.includes(s.id) && isAdjacentToAgent(s.id, p));
-    }
-    if (c.effect === 'infiltrate') {
-      return G.states.filter(s => p.agents.includes(s.id)); // pick 'from' state
-    }
-    if (c.needsAgent) {
-      return G.states.filter(s => p.agents.includes(s.id));
-    }
-    return [null]; // no target needed
+    if (c.global) return [null];
+    if (c.power)  return G.states.filter(s => !p.agents.includes(s.id) && !(c.soc==='THE' && s.sp));
+    if (c.effect === 'recruit')   return G.states.filter(s => !p.agents.includes(s.id) && isAdjacentToAgent(s.id, p));
+    if (c.effect === 'infiltrate') return G.states.filter(s => p.agents.includes(s.id));
+    if (c.needsAgent) return G.states.filter(s => p.agents.includes(s.id));
+    return [null];
   }
 
-  // Score a (card, target) pair — higher = better play
   function aiScore(c, t) {
     const tVP = t && soc.vpCheck(t);
     const tMine = t && p.agents.includes(t.id);
-
-    // Global event: score based on how many states it benefits
     if (c.global) {
-      // Count VP-scoring states we have agents on — if the event could help, worth playing
-      const agentVPCount = p.agents.filter(sid => {
-        const st = getState(sid); return st && soc.vpCheck(st);
-      }).length;
-      return 30 + agentVPCount * 5; // 30-55 range — situational but respectable
+      const agentVPCount = p.agents.filter(sid => { const st = getState(sid); return st && soc.vpCheck(st); }).length;
+      return 30 + agentVPCount * 5;
     }
-
-    // Power card: targets a qualifying state = massive value
     if (c.power) return tVP ? 95 : 55;
-
-    // Recruit onto an already-qualifying state = instant VP, highest priority
     if (c.effect === 'recruit') {
       if (!t) return 0;
-      if (tVP) return 100;                         // immediate point!
-      if (p.agents.length <= 1) return 65;         // desperately need more agents
-      if (p.agents.length <= 3) return 40;         // still building network
+      if (tVP) return 100;
+      if (p.agents.length <= 1) return 65;
+      if (p.agents.length <= 3) return 40;
       return 20;
     }
-
-    // Simulate whether this card would flip the target into a VP state
     if (tMine && t) {
-      const sim = {...t};
-      const ef = c.effect;
+      const sim = {...t}, ef = c.effect;
       if (ef==='lobbying'||ef==='reform_gov') sim.gov='republic';
       if (ef==='coup') { sim.gov='dictatorship'; sim.military=Math.min(10,sim.military+2); }
       if (ef==='assassinate'||ef==='mutiny'||ef==='revolution') sim.gov='provisional';
@@ -2065,68 +2070,395 @@ function aiTurn() {
       if (ef==='add_nuclear'||ef==='nuke_threat') sim.nuclear=Math.min(5,sim.nuclear+1);
       if (ef==='build_nuclear'||ef==='build_nukes') sim.nuclear=Math.min(5,sim.nuclear+2);
       if (ef==='add_patriotism'||ef==='propaganda') sim.patriotism=Math.min(5,sim.patriotism+3);
-      if (soc.vpCheck(sim) && !tVP) return 85;   // converts state to VP-scoring
-      if (soc.vpCheck(sim) && tVP)  return 25;   // already scores, mild value
+      if (soc.vpCheck(sim) && !tVP) return 85;
+      if (soc.vpCheck(sim) && tVP)  return 25;
     }
-
-    // Sanctions: worth playing if opponent has an agent there
     if (c.effect === 'sanctions') {
-      const opponentHere = G.players.some((op,i) => i!==G.players.indexOf(p) && t && op.agents.includes(t.id));
-      return opponentHere ? 50 : 5;
+      const opHere = G.players.some((op,i) => i!==G.players.indexOf(p) && t && op.agents.includes(t.id));
+      return opHere ? 50 : 5;
     }
-
-    return c.cost * 4; // fallback: heavier cards slightly preferred
+    return c.cost * 4;
   }
 
-  // Collect all options
   const options = [];
   for (const {c,i} of playable) {
-    const targets = aiTargets(c);
-    for (const t of targets) {
-      const sid = t ? t.id : null;
-      options.push({ c, i, targetSid: sid, score: aiScore(c, t) });
+    for (const t of aiTargets(c)) {
+      options.push({ c, i, targetSid: t ? t.id : null, score: aiScore(c, t) });
     }
   }
   options.sort((a,b) => b.score - a.score);
+  return options;
+}
 
-  if (options.length > 0) {
-    const {c, i, targetSid} = options[0];
+function aiTurn() {
+  if (!cur().isAI) return;
+  const p = cur();
 
-    if (targetSid !== undefined) {
-      p.ip -= c.cost;
-      p.hand.splice(i,1);
-      p.discard.push(c);
-      if (c.effect==='infiltrate') G.infiltrateFrom = p.agents[0];
-      const aiBeforeStates = snapshotStates();
-      applyEffect(c.effect, G.players.indexOf(p), targetSid);
-      logE(`${p.name} (AI) plays <strong>${c.name}</strong>${targetSid?' on '+getState(targetSid).name:''}.`);
-      renderAll();
-      showStateDeltas(aiBeforeStates);
-      played = true;
-
-      if (gMode === 'sim') {
-        showCommentary(p, c, targetSid, () => {
-          const aiDelay = Math.floor(SIM_DELAYS[simSpeed]*0.6);
-          setTimeout(() => { if (!simPaused) doEndTurn(); else waitForResume(doEndTurn); }, aiDelay);
-        });
-        return;
-      }
-    }
+  // Sim mode with commentary → full narrated turn (handles draw internally)
+  if (gMode === 'sim' && !commSkipped) {
+    aiTurnNarrated(p, () => {
+      if (!simPaused) doEndTurn(); else waitForResume(doEndTurn);
+    });
+    return;
   }
 
-  // No useful play found — burn the cheapest card for +2 IP to avoid dead hand buildup
+  // Fast path (hot/solo or commentary skipped)
+  if (!G.drawn) {
+    if (p.hand.length < MAX_HAND) dealCard(p);
+    if (p.hand.length < MAX_HAND) dealCard(p);
+    G.drawn = true;
+  }
+  while (p.hand.length > MAX_HAND) {
+    const d = p.hand.shift(); p.discard.push(d);
+    logE(`${p.name} discards <strong>${d.name}</strong> (hand limit).`);
+  }
+
+  const options = computeAIOptions(p);
+  let played = false;
+  if (options.length > 0) {
+    const {c, i, targetSid} = options[0];
+    if (targetSid !== undefined) {
+      p.ip -= c.cost; p.hand.splice(i,1); p.discard.push(c);
+      if (c.effect==='infiltrate') G.infiltrateFrom = p.agents[0];
+      const bef = snapshotStates();
+      applyEffect(c.effect, G.players.indexOf(p), targetSid);
+      logE(`${p.name} (AI) plays <strong>${c.name}</strong>${targetSid?' on '+getState(targetSid).name:''}.`);
+      renderAll(); showStateDeltas(bef);
+      played = true;
+    }
+  }
   if (!played && p.hand.length >= 4) {
     const sorted = [...p.hand].sort((a,b)=>a.cost-b.cost);
-    const burnIdx = p.hand.indexOf(sorted[0]);
-    const burned = p.hand.splice(burnIdx, 1)[0];
-    p.discard.push(burned);
-    p.ip += 2;
+    const bi = p.hand.indexOf(sorted[0]);
+    const burned = p.hand.splice(bi,1)[0];
+    p.discard.push(burned); p.ip += 2;
     logE(`${p.name} burns <strong>${burned.name}</strong> for +2 IP (no valid play).`);
     renderAll();
   }
-
   const aiDelay = gMode==='sim' ? Math.floor(SIM_DELAYS[simSpeed]*0.6) : 500;
   setTimeout(() => { if (!simPaused) doEndTurn(); else waitForResume(doEndTurn); }, aiDelay);
+}
+
+// ═══════════════════════════════════════════════════════
+//  TURN NARRATION (Simulation Mode)
+// ═══════════════════════════════════════════════════════
+let narrQueue = [];
+let narrDoneCallback = null;
+
+function advanceNarr() {
+  document.getElementById('commOverlay').classList.remove('show');
+  commResumeCallback = null;
+  // If skipped, drain queue executing any pending plays, then call done
+  if (commSkipped) {
+    while (narrQueue.length > 0) {
+      const s = narrQueue.shift();
+      if (s.executeOnContinue) s.executeOnContinue();
+    }
+    if (narrDoneCallback) { const fn = narrDoneCallback; narrDoneCallback = null; fn(); }
+    return;
+  }
+  if (!narrQueue.length) {
+    if (narrDoneCallback) { const fn = narrDoneCallback; narrDoneCallback = null; fn(); }
+    return;
+  }
+  const step = narrQueue.shift();
+  renderNarrStep(step);
+  if (step.executeOnContinue) {
+    commResumeCallback = () => {
+      document.getElementById('commOverlay').classList.remove('show');
+      step.executeOnContinue();
+      setTimeout(advanceNarr, commSkipped ? 0 : 700);
+    };
+  } else {
+    commResumeCallback = advanceNarr;
+  }
+  document.getElementById('commOverlay').classList.add('show');
+}
+
+function narrHideAll() {
+  ['commOpening','commCardSection','commDrawSection','commOptionsSection','commInfoSection',
+   'commTarget','commPhaseWrap']
+    .forEach(id => { const el=document.getElementById(id); if(el) el.style.display='none'; });
+}
+
+function narrHeader(step) {
+  const p = step.player, soc = SOCIETIES[p.soc];
+  document.getElementById('commBand').style.background = soc.color;
+  const av = document.getElementById('commAvatar');
+  av.textContent = soc.icon; av.style.background = soc.color+'33'; av.style.borderColor = soc.color+'88';
+  document.getElementById('commName').textContent = p.name;
+  document.getElementById('commName').style.color = soc.color;
+  document.getElementById('commSociety').textContent = soc.name + '  ·  ' + step.subtitle;
+  document.getElementById('commPhaseWrap').style.display = '';
+  document.getElementById('commPhaseLbl').textContent = step.subtitle;
+  document.getElementById('commPhaseStep').textContent = `Phase ${step.stepNum} of ${step.totalSteps}`;
+  document.getElementById('commContinueBtn').textContent = step.btnLabel || '▶ Continue';
+  document.getElementById('commContinueBtn').style.background = `linear-gradient(135deg,${soc.color},${soc.color}88)`;
+}
+
+function renderNarrStep(step) {
+  narrHideAll();
+  narrHeader(step);
+  document.getElementById('commReasoningLbl').style.display = '';
+  document.getElementById('commReasoning').style.display = '';
+  switch(step.type) {
+    case 'turn-start': renderNarrTurnStart(step); break;
+    case 'draw':       renderNarrDraw(step);       break;
+    case 'decision':   renderNarrDecision(step);   break;
+    case 'card-play':  renderNarrCardPlay(step);   break;
+    case 'end-turn':   renderNarrEndTurn(step);    break;
+  }
+}
+
+function renderNarrTurnStart(step) {
+  const p = step.player, soc = SOCIETIES[p.soc];
+  const vp = p.vpScore, needed = Math.max(0, G.vpThresh - vp);
+  const scoring = G.states.filter(s => p.agents.includes(s.id) && soc.vpCheck(s));
+  document.getElementById('commInfoSection').style.display = '';
+  document.getElementById('commInfoContent').innerHTML = `
+    <div class="comm-stat-grid">
+      <div class="comm-stat-item"><span class="comm-stat-lbl">VP Locked In</span><span class="comm-stat-val" style="color:${soc.color}">${vp} / ${G.vpThresh}</span></div>
+      <div class="comm-stat-item"><span class="comm-stat-lbl">Needed to Win</span><span class="comm-stat-val">${needed}</span></div>
+      <div class="comm-stat-item"><span class="comm-stat-lbl">IP Available</span><span class="comm-stat-val" style="color:#f39c12">${p.ip} 💠</span></div>
+      <div class="comm-stat-item"><span class="comm-stat-lbl">Active Agents</span><span class="comm-stat-val">${p.agents.length} 🕵</span></div>
+    </div>
+    <div style="margin-top:.6rem;font-size:.7rem;color:#888;border-top:1px solid #1e1e38;padding-top:.55rem">
+      <em style="color:var(--dim)">Objective:</em> <span style="color:${soc.color}">${soc.vpDesc}</span>
+    </div>
+    ${scoring.length ? `<div style="margin-top:.35rem;font-size:.7rem;color:#888">Scoring now: <b style="color:${soc.color}">${scoring.map(s=>(FLAGS[s.id]||'🏳')+' '+s.name).join(', ')}</b></div>` : ''}`;
+  document.getElementById('commReasoningLbl').textContent = 'Position Assessment';
+  document.getElementById('commReasoning').innerHTML = genNarrTurnStartReasoning(p);
+}
+
+function genNarrTurnStartReasoning(p) {
+  const soc = SOCIETIES[p.soc], voice = SOC_VOICE[p.soc];
+  const opener = voice[Math.floor(Math.random()*voice.length)];
+  const vp = p.vpScore, needed = G.vpThresh - vp;
+  const scoring = G.states.filter(s => p.agents.includes(s.id) && soc.vpCheck(s));
+  const adjVP = G.states.filter(s => !p.agents.includes(s.id) && soc.vpCheck(s) && isAdjacentToAgent(s.id, p));
+  if (vp === 0 && p.agents.length <= 1) {
+    return `${opener}: we start this turn with no VP — one agent and no scoring states yet. The entire focus is establishing a foothold. Every IP spent placing an agent now returns +1 IP every turn forever, compounding toward victory.`;
+  }
+  if (scoring.length > 0 && adjVP.length > 0) {
+    return `${opener}: <em>${scoring.length} state${scoring.length!==1?'s':''}</em> actively score VP, and <em>${adjVP.length}</em> adjacent VP-qualifying position${adjVP.length!==1?'s':''} within reach. The choice this turn: consolidate existing holdings or push into new territory. <em>${needed}</em> more VP needed.`;
+  }
+  if (scoring.length > 0) {
+    return `${opener}: <em>${vp} VP</em> locked in from ${scoring.length} scoring state${scoring.length!==1?'s':''}. No adjacent VP-qualifying states reachable this turn — focus on aligning existing territory and positioning for future expansion. <em>${needed}</em> to go.`;
+  }
+  return `${opener}: <em>${vp} VP</em> on the board but agents aren't in qualifying positions — conditions need to change. This turn must convert or reposition. <em>${needed}</em> VP needed.`;
+}
+
+function renderNarrDraw(step) {
+  const p = step.player;
+  document.getElementById('commDrawSection').style.display = '';
+  const container = document.getElementById('commDrawCards');
+  container.innerHTML = '';
+  if (!step.drawnCards.length) {
+    container.innerHTML = '<div style="font-size:.78rem;color:var(--dim);padding:.3rem 0">No cards drawn — hand was already full.</div>';
+  } else {
+    step.drawnCards.forEach(c => {
+      const isGlb=!!c.global, isPwr=!!c.power;
+      const tc = isGlb?'#1abc9c':isPwr?'#ffd700':(TYPE_COLORS[c.type]||'#aaa');
+      const div = document.createElement('div');
+      div.className = 'comm-mini-card';
+      div.style.borderTopColor = tc;
+      div.innerHTML = `<div class="comm-mini-icon">${c.icon}</div>
+        <div class="comm-mini-name" style="color:${tc}">${c.name}</div>
+        <div class="comm-mini-type">${isGlb?'Global':isPwr?'Power':c.type}</div>
+        <div class="comm-mini-cost">${c.cost} 💠</div>`;
+      div.dataset.tip = `<b>${c.icon} ${c.name}</b>${c.cost} 💠 · ${isGlb?'Global Event':isPwr?'Power Card':c.type}<br>${c.desc}`;
+      container.appendChild(div);
+    });
+  }
+  document.getElementById('commReasoningLbl').textContent = 'Hand Assessment';
+  document.getElementById('commReasoning').innerHTML = genNarrDrawReasoning(p, step.drawnCards);
+}
+
+function genNarrDrawReasoning(p, drawn) {
+  const voice = SOC_VOICE[p.soc], opener = voice[Math.floor(Math.random()*voice.length)];
+  if (!drawn.length) {
+    return `${opener}: hand at the ${MAX_HAND}-card limit — no draw this turn. We need to play or burn cards to cycle the deck and create options. A burn for +2 IP may be the right move.`;
+  }
+  const useful = drawn.filter(c => c.power || c.global || ['recruit','lobbying','reform_gov','coup','add_patriotism'].includes(c.effect));
+  return `${opener}: drew <em>${drawn.map(c=>c.icon+' '+c.name).join('</em> and <em>')}</em>. `
+    + (useful.length ? `<em>${useful[0].name}</em> is a strong candidate for this turn. ` : 'These cards offer situational value — best use depends on the board. ')
+    + `Hand is now <em>${p.hand.length} card${p.hand.length!==1?'s':''}</em>. `
+    + (p.deck.length < 4 ? `Deck nearly empty (${p.deck.length} left) — reshuffle coming soon.` : `${p.deck.length} cards remain in deck.`);
+}
+
+function renderNarrDecision(step) {
+  const p = step.player;
+  document.getElementById('commOptionsSection').style.display = '';
+  document.getElementById('commOptionsLbl').textContent =
+    step.totalConsidered + ' Play' + (step.totalConsidered!==1?'s':'') + ' Evaluated';
+  const list = document.getElementById('commOptionsList');
+  list.innerHTML = '';
+  if (!step.topOptions.length) {
+    list.innerHTML = `<div class="comm-opt-empty">No affordable plays available with ${p.ip} 💠 IP. Will burn a card for +2 IP instead.</div>`;
+  } else {
+    step.topOptions.forEach((opt, i) => {
+      const best = i===0;
+      const target = opt.targetSid ? getState(opt.targetSid) : null;
+      const star = opt.score >= 90 ? '⭐ ' : opt.score >= 60 ? '✓ ' : '';
+      const div = document.createElement('div');
+      div.className = 'comm-opt' + (best?' best':'');
+      div.innerHTML = `<div class="comm-opt-num">${best?'🏆':i+1}</div>
+        <div class="comm-opt-body">
+          <div class="comm-opt-name">${opt.c.icon} ${opt.c.name}</div>
+          <div class="comm-opt-target">${target?`→ ${FLAGS[target.id]||'🏳'} ${target.name}`:'→ All qualifying states'}</div>
+        </div>
+        <div class="comm-opt-score">${star}${opt.score}</div>`;
+      div.dataset.tip = `<b>${opt.c.icon} ${opt.c.name}</b>Score: ${opt.score}<br>${opt.c.desc}${target?'<br>→ '+target.name:''}`;
+      list.appendChild(div);
+    });
+  }
+  document.getElementById('commReasoningLbl').textContent = 'Why This Play';
+  if (step.chosen) {
+    const opt = step.chosen, t = opt.targetSid ? getState(opt.targetSid) : null;
+    const sc = opt.score;
+    document.getElementById('commReasoning').innerHTML =
+      `<em>${opt.c.icon} ${opt.c.name}</em>${t?' on <em>'+(FLAGS[t.id]||'🏳')+' '+t.name+'</em>':''} scores <em>${sc}</em> — `
+      +(sc>=100?'an immediate VP opportunity. Placing an agent on a qualifying state is the top priority.'
+       :sc>=85 ?'this play converts a state into VP-scoring territory — strong immediate value.'
+       :sc>=60 ?'good strategic value — strengthens our position and builds toward VP scoring.'
+       :sc>=40 ?'situational value — no high-scoring options available but this advances our agenda.'
+                :'limited options this turn — making the best of what is available.');
+  } else {
+    document.getElementById('commReasoning').innerHTML =
+      `No cards are affordable with <em>${p.ip} IP</em>. Burning the cheapest card for <em>+2 IP</em> ensures stronger options next turn.`;
+  }
+}
+
+function renderNarrCardPlay(step) {
+  const p = step.player, soc = SOCIETIES[p.soc], c = step.card;
+  const isPwr=!!c.power, isGlb=!!c.global;
+  const accent = isGlb?'#1abc9c':isPwr?'#ffd700':soc.color;
+  const target = step.targetSid ? getState(step.targetSid) : null;
+  document.getElementById('commCardSection').style.display = '';
+  document.getElementById('commBand').style.background =
+    isGlb?'linear-gradient(90deg,#0e6655,#1abc9c,#0e6655)':
+    isPwr?'linear-gradient(90deg,#b8860b,#ffd700,#b8860b)':soc.color;
+  document.getElementById('commCardIcon').textContent = c.icon;
+  document.getElementById('commCardName').textContent = c.name;
+  document.getElementById('commCardName').style.color = accent;
+  document.getElementById('commCardMeta').textContent =
+    `${c.cost} 💠  ·  ${isGlb?'Global Event':isPwr?'Power — Society Exclusive':c.type}`;
+  document.getElementById('commCardBlock').style.borderColor =
+    isGlb?'rgba(26,188,156,.3)':isPwr?'rgba(255,215,0,.3)':'#2e2e50';
+  document.getElementById('commCardBlock').dataset.tip = `<b>${c.icon} ${c.name}</b>${c.desc}`;
+  const tWrap = document.getElementById('commTarget');
+  if (target) {
+    tWrap.style.display = '';
+    document.getElementById('commTargetBody').innerHTML =
+      `<b>${FLAGS[target.id]||'🏳'} ${target.name}</b><br>`
+      +`${GOV_ICONS[target.gov]||''} ${target.gov} &nbsp;·&nbsp; `
+      +`${target.econ==='capitalist'?'💹':'☭'} ${target.econ} &nbsp;·&nbsp; `
+      +`${target.cult==='secular'?'🔬':'✝'} ${target.cult}<br>`
+      +`⚔ ${target.military} &nbsp;·&nbsp; ☢ ${target.nuclear} &nbsp;·&nbsp; ♥ ${target.patriotism} &nbsp;·&nbsp; 💎 ${target.resources}`;
+  }
+  document.getElementById('commReasoningLbl').textContent = 'Strategic Reasoning';
+  document.getElementById('commReasoning').innerHTML = step.reasoning;
+}
+
+function renderNarrEndTurn(step) {
+  const p = step.player, soc = SOCIETIES[p.soc];
+  const income = p.agents.length, liveVP = calcVP(p), needed = Math.max(0, G.vpThresh - liveVP);
+  document.getElementById('commInfoSection').style.display = '';
+  document.getElementById('commInfoContent').innerHTML = `
+    <div class="comm-stat-grid">
+      <div class="comm-stat-item"><span class="comm-stat-lbl">Income Earned</span><span class="comm-stat-val" style="color:#f39c12">+${income} 💠</span></div>
+      <div class="comm-stat-item"><span class="comm-stat-lbl">New IP Total</span><span class="comm-stat-val">${p.ip + income} 💠</span></div>
+      <div class="comm-stat-item"><span class="comm-stat-lbl">Live VP</span><span class="comm-stat-val" style="color:${soc.color}">${liveVP}</span></div>
+      <div class="comm-stat-item"><span class="comm-stat-lbl">VP to Win</span><span class="comm-stat-val">${needed}</span></div>
+    </div>
+    <div style="margin-top:.6rem;font-size:.7rem;color:#888;border-top:1px solid #1e1e38;padding-top:.55rem;display:flex;gap:1.2rem">
+      <span>⚡ Tension <b>${G.tension}</b>/10</span>
+      <span>🏛 Stability <b>${G.stability}</b>/10</span>
+      <span>🌍 Round <b>${G.round}</b></span>
+    </div>`;
+  document.getElementById('commReasoningLbl').textContent = 'Turn Summary';
+  const voice = SOC_VOICE[p.soc], opener = voice[Math.floor(Math.random()*voice.length)];
+  document.getElementById('commReasoning').innerHTML =
+    `${opener}: turn complete. <em>+${income} IP</em> collected from <em>${p.agents.length} agent${p.agents.length!==1?'s':''}</em> — income that compounds every turn we grow the network. `
+    +`Live VP stands at <em>${liveVP}</em>, which locks in at the start of our next turn. `
+    +(needed <= 4 ? `⚠️ Only <em>${needed} VP</em> from victory — opponents must act now to stop us.`
+                  : `<em>${needed}</em> VP still needed. We press on.`);
+}
+
+function aiTurnNarrated(p, onDone) {
+  let stepNum = 0;
+  const total = (p.hand.length < MAX_HAND && !G.drawn) ? 5 : 5; // always 5 (or 4 if no play)
+  const mk = (type, subtitle, extra) => ({ type, subtitle, player: p, stepNum: ++stepNum, totalSteps: 0, ...extra });
+
+  // Step 1: Turn start
+  const s1 = mk('turn-start', 'TURN START');
+
+  // Draw — captured here so we know what was drawn
+  const handBefore = p.hand.length;
+  if (!G.drawn) {
+    if (p.hand.length < MAX_HAND) dealCard(p);
+    if (p.hand.length < MAX_HAND) dealCard(p);
+    G.drawn = true;
+  }
+  while (p.hand.length > MAX_HAND) {
+    const d = p.hand.shift(); p.discard.push(d);
+    logE(`${p.name} discards <strong>${d.name}</strong> (hand limit).`);
+  }
+  const drawnCards = p.hand.slice(handBefore);
+  renderAll();
+
+  // Step 2: Draw
+  const s2 = mk('draw', 'DRAW PHASE', { drawnCards });
+
+  // Evaluate options
+  const options = computeAIOptions(p);
+  const topOptions = options.slice(0, 3);
+  const chosen = options[0] || null;
+
+  // Step 3: Decision — executeOnContinue runs the play, then advanceNarr shows step 4
+  const s3 = mk('decision', 'CHOOSING A PLAY', {
+    topOptions, chosen, totalConsidered: options.length,
+    btnLabel: chosen ? '▶ Execute Play →' : '▶ Burn & Continue →',
+    executeOnContinue: chosen
+      ? () => {
+          const {c, i, targetSid} = chosen;
+          p.ip -= c.cost; p.hand.splice(i,1); p.discard.push(c);
+          if (c.effect==='infiltrate') G.infiltrateFrom = p.agents[0];
+          const bef = snapshotStates();
+          applyEffect(c.effect, G.players.indexOf(p), targetSid);
+          const tName = targetSid ? (getState(targetSid)?.name||'') : '';
+          logE(`${p.name} (AI) plays <strong>${c.name}</strong>${tName?' on '+tName:''}.`);
+          renderAll(); showStateDeltas(bef);
+        }
+      : () => {
+          if (p.hand.length >= 4) {
+            const sorted = [...p.hand].sort((a,b)=>a.cost-b.cost);
+            const bi = p.hand.indexOf(sorted[0]);
+            const burned = p.hand.splice(bi,1)[0];
+            p.discard.push(burned); p.ip += 2;
+            logE(`${p.name} burns <strong>${burned.name}</strong> for +2 IP (no viable play).`);
+            renderAll();
+          }
+        }
+  });
+
+  let steps;
+  if (chosen) {
+    const s4 = mk('card-play', 'CARD PLAYED', {
+      card: chosen.c, targetSid: chosen.targetSid,
+      reasoning: genReasoning(p, chosen.c, chosen.targetSid),
+    });
+    const s5 = mk('end-turn', 'END OF TURN', { btnLabel: '▶ Next Player →' });
+    steps = [s1, s2, s3, s4, s5];
+  } else {
+    const s4 = mk('end-turn', 'END OF TURN', { btnLabel: '▶ Next Player →' });
+    steps = [s1, s2, s3, s4];
+  }
+  steps.forEach(s => s.totalSteps = steps.length);
+
+  narrQueue = steps;
+  narrDoneCallback = onDone;
+  advanceNarr();
 }
 
 // ═══════════════════════════════════════════════════════
