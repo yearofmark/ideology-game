@@ -36,9 +36,18 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 
 .popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:none;align-items:center;justify-content:center;}
 .popup-overlay.show{display:flex;}
+.popup-overlay.minimized{background:transparent;pointer-events:none;align-items:flex-end;justify-content:flex-start;padding:0 0 1.4rem 1.4rem;}
+.popup-overlay.minimized .popup-box{pointer-events:auto;min-width:0;max-width:none;padding:0;border-radius:2rem;}
+.popup-overlay.minimized #popupContent,.popup-overlay.minimized .popup-close,.popup-overlay.minimized .popup-minimize-btn{display:none !important;}
+.popup-overlay.minimized .popup-pill{display:flex !important;}
 .popup-box{background:#18182a;border:1px solid #33334a;border-radius:1rem;padding:1.8rem 1.8rem 1.4rem;min-width:22rem;max-width:32rem;position:relative;box-shadow:0 1.5rem 3.75rem rgba(0,0,0,.6);}
 .popup-close{position:absolute;top:.75rem;right:.9rem;background:transparent;border:none;color:var(--dim);font-size:1.1rem;cursor:pointer;line-height:1;padding:.25rem .4rem;border-radius:.25rem;}
 .popup-close:hover{color:var(--text);background:rgba(255,255,255,.07);}
+.popup-minimize-btn{position:absolute;top:.75rem;right:2.4rem;background:transparent;border:none;color:var(--dim);font-size:1.1rem;cursor:pointer;line-height:1;padding:.25rem .35rem;border-radius:.25rem;}
+.popup-minimize-btn:hover{color:var(--text);background:rgba(255,255,255,.07);}
+.popup-pill{display:none;align-items:center;gap:.6rem;padding:.55rem 1rem .55rem .85rem;}
+.popup-pill-label{font-size:.75rem;font-weight:900;color:#fff;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;}
+.popup-pill-restore{padding:.3rem .75rem;border-radius:1rem;border:none;background:rgba(255,255,255,.1);color:#fff;font-size:.68rem;font-weight:700;cursor:pointer;white-space:nowrap;}
 .popup-title{font-size:1.15rem;font-weight:900;letter-spacing:.5px;margin-bottom:4px;}
 .popup-sub{font-size:.72rem;color:var(--dim);margin-bottom:1rem;letter-spacing:1px;}
 .popup-attrs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:1rem;}
@@ -79,6 +88,15 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 /* ── RULES OVERLAY ── */
 .rules-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:250;display:none;align-items:center;justify-content:center;}
 .rules-overlay.show{display:flex;}
+.rules-overlay.minimized{background:transparent;pointer-events:none;align-items:flex-end;justify-content:flex-start;padding:0 0 5rem 1.4rem;}
+.rules-overlay.minimized .rules-panel{pointer-events:auto;width:auto;max-height:none;border-radius:2rem;overflow:visible;}
+.rules-overlay.minimized .rules-hd,.rules-overlay.minimized .rules-tabs,.rules-overlay.minimized .rules-body,.rules-overlay.minimized .rules-close,.rules-overlay.minimized .rules-minimize-btn{display:none !important;}
+.rules-overlay.minimized .rules-pill{display:flex !important;}
+.rules-minimize-btn{position:absolute;top:.55rem;right:2.6rem;background:transparent;border:none;color:var(--dim);font-size:1.1rem;cursor:pointer;line-height:1;padding:.25rem .35rem;border-radius:.25rem;}
+.rules-minimize-btn:hover{color:var(--text);background:rgba(255,255,255,.07);}
+.rules-pill{display:none;align-items:center;gap:.6rem;padding:.55rem 1rem .55rem .85rem;}
+.rules-pill-restore{padding:.3rem .75rem;border-radius:1rem;border:none;background:rgba(255,255,255,.1);color:#fff;font-size:.68rem;font-weight:700;cursor:pointer;white-space:nowrap;}
+.rules-pill-label{font-size:.75rem;font-weight:900;color:#fff;white-space:nowrap;}
 .rules-panel{background:#13132a;border:1px solid #2e2e50;border-radius:1rem;width:min(700px,94vw);max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 2rem 5rem rgba(0,0,0,.75);position:relative;}
 .rules-hd{padding:.7rem 1.1rem;border-bottom:1px solid #2e2e50;display:flex;align-items:center;gap:.5rem;font-size:.88rem;font-weight:900;letter-spacing:.5px;flex-shrink:0;}
 .rules-hd-icon{font-size:1.1rem;}
@@ -394,7 +412,12 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 <!-- ══════════ POPUP ══════════ -->
 <div class="popup-overlay" id="popupOverlay" onclick="onOverlayClick(event)">
   <div class="popup-box" id="popupBox">
+    <button class="popup-minimize-btn" onclick="minimizePopup()" title="Minimize">⊟</button>
     <button class="popup-close" onclick="closePopup()">✕</button>
+    <div class="popup-pill" id="popupPill">
+      <span class="popup-pill-label" id="popupPillLabel">Details</span>
+      <button class="popup-pill-restore" onclick="restorePopup()">▶ View</button>
+    </div>
     <div id="popupContent"></div>
   </div>
 </div>
@@ -402,8 +425,13 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 <!-- ══════════ RULES ══════════ -->
 <div class="rules-overlay" id="rulesOverlay" onclick="onRulesOverlayClick(event)">
   <div class="rules-panel" id="rulesPanel">
+    <button class="rules-minimize-btn" onclick="minimizeRules()" title="Minimize">⊟</button>
     <div class="rules-hd"><span class="rules-hd-icon">📖</span> Rules Reference</div>
     <button class="rules-close" onclick="closeRules()">✕</button>
+    <div class="rules-pill" id="rulesPill">
+      <span class="rules-pill-label">📖 Rules Reference</span>
+      <button class="rules-pill-restore" onclick="restoreRules()">▶ View</button>
+    </div>
     <div class="rules-tabs" id="rulesTabs"></div>
     <div class="rules-body" id="rulesBody"></div>
   </div>
@@ -2904,8 +2932,16 @@ const FLAGS = {
   CHN:'🇨🇳', ARG:'🇦🇷', ZAF:'🇿🇦', AUS:'🇦🇺', UK:'🇬🇧',
 };
 
-function showPopup()  { document.getElementById('popupOverlay').classList.add('show'); }
-function closePopup() { document.getElementById('popupOverlay').classList.remove('show'); }
+function showPopup()  {
+  document.getElementById('popupOverlay').classList.remove('minimized');
+  document.getElementById('popupOverlay').classList.add('show');
+}
+function closePopup() {
+  document.getElementById('popupOverlay').classList.remove('show');
+  document.getElementById('popupOverlay').classList.remove('minimized');
+}
+function minimizePopup()  { document.getElementById('popupOverlay').classList.add('minimized'); }
+function restorePopup()   { document.getElementById('popupOverlay').classList.remove('minimized'); }
 function onOverlayClick(e) { if (e.target === document.getElementById('popupOverlay')) closePopup(); }
 
 function showStatePopup(sid) {
@@ -2913,6 +2949,7 @@ function showStatePopup(sid) {
   if (!s) return;
   const agentPlayers  = G.players.filter(p => p.agents.includes(sid));
   const vpSocieties   = Object.values(SOCIETIES).filter(soc => soc.vpCheck(s));
+  document.getElementById('popupPillLabel').textContent = (FLAGS[s.id]||'🏳') + ' ' + s.name;
 
   document.getElementById('popupContent').innerHTML = `
     <div class="popup-title">${FLAGS[s.id]||'🏳'} ${s.name}${s.sp ? ' ⭐' : ''}</div>
@@ -2983,6 +3020,7 @@ function showStatePopup(sid) {
 }
 
 function showCardPopup(card, idx) {
+  document.getElementById('popupPillLabel').textContent = (card.icon||'🃏') + ' ' + card.name;
   const isPwr = !!card.power;
   const isGlb = !!card.global;
   const tc = isGlb ? '#1abc9c' : isPwr ? '#ffd700' : (TYPE_COLORS[card.type] || '#aaa');
@@ -3074,12 +3112,16 @@ function burnCard(idx, action) {
 // ═══════════════════════════════════════════════════════
 let rulesTab = 'play';
 
+function minimizeRules() { document.getElementById('rulesOverlay').classList.add('minimized'); }
+function restoreRules()  { document.getElementById('rulesOverlay').classList.remove('minimized'); }
+
 function showRules() {
   switchRulesTab(rulesTab);
   document.getElementById('rulesOverlay').classList.add('show');
 }
 function closeRules() {
   document.getElementById('rulesOverlay').classList.remove('show');
+  document.getElementById('rulesOverlay').classList.remove('minimized');
 }
 function onRulesOverlayClick(e) {
   if (e.target === document.getElementById('rulesOverlay')) closeRules();
