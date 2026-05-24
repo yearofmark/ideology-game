@@ -139,8 +139,6 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .rm-btn{background:transparent;border:none;color:#c0392b;cursor:pointer;font-size:1rem;padding:4px 8px;}
 .add-btn{width:100%;padding:8px;border:1px dashed var(--border);border-radius:6px;background:transparent;color:var(--dim);cursor:pointer;font-size:0.8rem;margin-top:4px;}
 .add-btn:hover{color:var(--text);border-color:#555;}
-.sp-select{flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:0.8rem;}
-
 /* ── GAME SCREEN ── */
 #game{flex-direction:row;}
 .sidebar{width:282px;min-width:282px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;gap:8px;padding:10px;overflow-y:auto;}
@@ -341,6 +339,32 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .comm-opt-score{font-size:.68rem;color:var(--dim);font-weight:bold;white-space:nowrap;padding-top:3px;}
 .comm-opt.best .comm-opt-score{color:#f1c40f;}
 .comm-opt-empty{font-size:.78rem;color:var(--dim);padding:.5rem 0;}
+/* ── STARTING POSITION PICKER ── */
+#spPickOverlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:600;display:none;align-items:center;justify-content:center;}
+.sp-pick-box{background:#12122a;border:1px solid #2a2a4a;border-radius:1rem;padding:2rem 2rem 1.5rem;max-width:720px;width:92%;max-height:90vh;overflow-y:auto;}
+.sp-pick-header{text-align:center;margin-bottom:1.4rem;}
+.sp-pick-soc-badge{font-size:2.8rem;margin-bottom:.4rem;line-height:1;}
+.sp-pick-title{font-size:1.25rem;font-weight:900;margin:0 0 .35rem;color:var(--text);}
+.sp-pick-sub{font-size:.72rem;color:var(--dim);margin:0;}
+.sp-pick-cards{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;}
+@media(max-width:520px){.sp-pick-cards{grid-template-columns:1fr;}}
+.sp-card{background:#1a1a30;border:2px solid #252540;border-radius:.75rem;padding:1.1rem 1rem 1rem;cursor:pointer;transition:all .15s;position:relative;display:flex;flex-direction:column;}
+.sp-card:hover{border-color:rgba(255,255,255,.28);transform:translateY(-2px);background:#1f1f3a;}
+.sp-card-flag{font-size:2rem;margin-bottom:.3rem;line-height:1;}
+.sp-card-name{font-size:1rem;font-weight:900;margin-bottom:.25rem;color:#fff;}
+.sp-card-stats{font-size:.62rem;color:var(--dim);margin-bottom:.65rem;letter-spacing:.5px;}
+.sp-fit-badge{display:inline-block;font-size:.58rem;font-weight:900;letter-spacing:1.2px;padding:2px 8px;border-radius:10px;margin-bottom:.6rem;width:fit-content;}
+.sp-fit-ideal {background:rgba(39,174,96,.2); color:#2ecc71;border:1px solid #27ae60;}
+.sp-fit-strong{background:rgba(41,128,185,.2);color:#5dade2;border:1px solid #2980b9;}
+.sp-fit-fair  {background:rgba(243,156,18,.18);color:#f5b942;border:1px solid #d4ac0d;}
+.sp-fit-weak  {background:rgba(192,57,43,.18); color:#e57373;border:1px solid #c0392b;}
+.sp-card-note{font-size:.67rem;color:#a0a0c0;line-height:1.55;flex:1;}
+.sp-card-btn{margin-top:.85rem;width:100%;padding:.48rem;border-radius:.4rem;border:none;cursor:pointer;font-weight:700;font-size:.74rem;background:rgba(255,255,255,.08);color:#fff;transition:background .13s;letter-spacing:.3px;}
+.sp-card-btn:hover{background:rgba(255,255,255,.17);}
+.sp-card.sp-taken{opacity:.35;pointer-events:none;}
+.sp-taken-lbl{display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:.7rem;font-weight:900;color:#fff;background:rgba(0,0,0,.6);padding:3px 10px;border-radius:8px;pointer-events:none;}
+.sp-card.sp-taken .sp-taken-lbl{display:block;}
+.sp-pick-progress{text-align:center;font-size:.6rem;color:#393960;letter-spacing:1.5px;text-transform:uppercase;margin-top:1.1rem;}
 </style>
 </head>
 <body>
@@ -428,6 +452,19 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
       <button class="comm-continue" id="commContinueBtn" onclick="resumeFromCommentary()">▶ Continue</button>
       <button class="comm-turn-skip" onclick="skipCommentary()">Skip commentary for this game</button>
     </div>
+  </div>
+</div>
+
+<!-- ══════════ STARTING POSITION PICKER ══════════ -->
+<div id="spPickOverlay">
+  <div class="sp-pick-box">
+    <div class="sp-pick-header">
+      <div class="sp-pick-soc-badge" id="spPickSocBadge"></div>
+      <h2 class="sp-pick-title" id="spPickTitle">Choose Your Starting Position</h2>
+      <p class="sp-pick-sub" id="spPickSub">Select the superpower you will control at game start</p>
+    </div>
+    <div class="sp-pick-cards" id="spPickCards"></div>
+    <div class="sp-pick-progress" id="spPickProgress"></div>
   </div>
 </div>
 
@@ -666,6 +703,62 @@ const SOCIETIES = {
 };
 
 // ═══════════════════════════════════════════════════════
+//  STARTING POSITION FIT ANALYSIS (society × superpower)
+// ═══════════════════════════════════════════════════════
+const SP_FIT = {
+  TCH: {
+    USA:  { rating:'ideal',  icon:'⭐', label:'IDEAL',
+      note:"The USA is already a republic, secular, and patriotic — your VP condition from turn one. Project the Technocrat model outward from the world's most powerful democracy." },
+    UK:   { rating:'strong', icon:'▲',  label:'STRONG',
+      note:"Britain's secular democracy and strong patriotism nearly satisfy Technocrat doctrine. One governmental reform short of scoring VP, with a strong capitalist foundation to build on." },
+    USSR: { rating:'fair',   icon:'◆',  label:'FAIR',
+      note:"The USSR has secular institutions and deep patriotism but its dictatorship must be reformed before you score VP here. A slow transformation, but a vast platform for influence." },
+    CHN:  { rating:'fair',   icon:'◆',  label:'FAIR',
+      note:"China offers secular culture and high patriotism — two of three Technocrat ideals. The dictatorship must fall to start scoring VP, but the Asian sphere opens up quickly." },
+  },
+  THE: {
+    USA:  { rating:'weak',   icon:'▼',  label:'WEAK',
+      note:"The USA's secular liberal democracy stands against Theocracy on every axis. Converting it means dismantling centuries of republican tradition. A steep hill from the very first turn." },
+    UK:   { rating:'weak',   icon:'▼',  label:'WEAK',
+      note:"Britain's secular parliamentary system is deeply resistant to religious governance. Only patriotism aligns — everything else must be overturned before you score a single VP." },
+    USSR: { rating:'strong', icon:'▲',  label:'STRONG',
+      note:"Iron authoritarian control and high patriotism are already in place. Convert secular culture to religious and the USSR immediately scores Theocrat VP — one cultural shift away from dominance." },
+    CHN:  { rating:'strong', icon:'▲',  label:'STRONG',
+      note:"China's powerful dictatorship and deep patriotism form a near-perfect Theocrat base. A single cultural conversion to religious and China becomes your anchor VP state in Asia." },
+  },
+  PLU: {
+    USA:  { rating:'ideal',  icon:'⭐', label:'IDEAL',
+      note:"The USA is the crown jewel of Plutocratic power — capitalist, nuclear-armed, and resource-rich. VP from day one and the financial leverage to project economic dominance across the world." },
+    UK:   { rating:'ideal',  icon:'⭐', label:'IDEAL',
+      note:"Britain's capitalist economy and nuclear arsenal make it a natural Plutocrat stronghold. Start here to anchor the western economic order and expand your network of capitalist client states." },
+    USSR: { rating:'weak',   icon:'▼',  label:'WEAK',
+      note:"The Soviet command economy is the antithesis of Plutocratic capitalism. The nuclear arsenal is present but the entire economic model must be dismantled before you score a single VP here." },
+    CHN:  { rating:'weak',   icon:'▼',  label:'WEAK',
+      note:"China's communist economy and modest nuclear stockpile make it a poor Plutocrat base. Transforming it requires overturning the entire state model — a long road before any VP returns." },
+  },
+  STR: {
+    USA:  { rating:'weak',   icon:'▼',  label:'WEAK',
+      note:"The USA's capitalist economy fundamentally opposes Stratocrat doctrine. Its military is enormous, but without communism that power generates no VP. You'll need to rebuild from scratch." },
+    UK:   { rating:'weak',   icon:'▼',  label:'WEAK',
+      note:"Britain's capitalist democracy resists Stratocratic communism at every level. Its military is moderate and the economy must be fully restructured before you can begin to score." },
+    USSR: { rating:'ideal',  icon:'⭐', label:'IDEAL',
+      note:"The USSR is the Stratocrat's natural home — communist and fielding the largest conventional military in the world. VP from turn one and immediate projection of power across the eastern bloc." },
+    CHN:  { rating:'ideal',  icon:'⭐', label:'IDEAL',
+      note:"China's communist system and massive standing army make it a Stratocrat powerhouse. Score VP from the opening turn and project military-communist doctrine across the entire Asian hemisphere." },
+  },
+  ANA: {
+    USA:  { rating:'fair',   icon:'◆',  label:'FAIR',
+      note:"America's vast resources and global reach give Anarchists a powerful staging platform — even if its stable republic resists collapse. Seed disruption outward while destabilizing the home front." },
+    UK:   { rating:'fair',   icon:'◆',  label:'FAIR',
+      note:"Britain's fading imperial structures and strong patriotism create fertile ground for Anarchist movements. The monarchy is brittle under sustained pressure — a provisional government is achievable." },
+    USSR: { rating:'weak',   icon:'▼',  label:'WEAK',
+      note:"The USSR's iron security apparatus and total state control make it the hardest base for Anarchists. Destabilizing into a provisional government requires dismantling the world's most entrenched dictatorship." },
+    CHN:  { rating:'fair',   icon:'◆',  label:'FAIR',
+      note:"China's authoritarian grip, high patriotism, and history of mass upheaval make it surprisingly susceptible to Anarchist transformation. A collapsing dictatorship can become a provisional state fast." },
+  },
+};
+
+// ═══════════════════════════════════════════════════════
 //  STATES  (5×5 grid, superpowers at corners)
 // ═══════════════════════════════════════════════════════
 const INIT_STATES = [
@@ -802,8 +895,8 @@ function initSetup() {
     </button>`
   ).join('');
   setupPlayers = [
-    {name:'Player 1', soc:'TCH', sp:'USA'},
-    {name:'Player 2', soc:'STR', sp:'USSR'},
+    {name:'Player 1', soc:'TCH'},
+    {name:'Player 2', soc:'STR'},
   ];
   renderSetupPlayers();
   setThresh(13);
@@ -830,8 +923,7 @@ function addPlayer() {
   const ids = Object.keys(SOCIETIES);
   const used = setupPlayers.map(p=>p.soc);
   const next = ids.find(id=>!used.includes(id)) || ids[0];
-  const sps = ['USA','USSR','CHN','UK','FRA'];
-  setupPlayers.push({name:'Player '+(setupPlayers.length+1), soc:next, sp: sps[setupPlayers.length]});
+  setupPlayers.push({name:'Player '+(setupPlayers.length+1), soc:next});
   renderSetupPlayers();
 }
 function removePlayer(i) {
@@ -844,8 +936,6 @@ function setPlayerSP(i, sp)   { setupPlayers[i].sp  = sp;  renderSetupPlayers();
 
 function renderSetupPlayers() {
   const c = document.getElementById('pRows');
-  const spOptions = ['USA','USSR','CHN','UK','FRA','GER','JPN','UK'].map(id =>
-    `<option value="${id}">${INIT_STATES.find(s=>s.id===id)?.name||id}</option>`).join('');
   c.innerHTML = setupPlayers.map((p,i) => {
     const isAI = (gMode==='solo' && i>0) || gMode==='sim';
     return `<div class="prow">
@@ -855,9 +945,6 @@ function renderSetupPlayers() {
           <span class="si" style="font-size:1rem">${s.icon}</span>
           <span class="sn" style="font-size:.65rem">${s.name}</span>
         </button>`).join('')}
-      <select class="sp-select" onchange="setPlayerSP(${i},this.value)">
-        ${INIT_STATES.filter(s=>s.sp).map(s=>`<option value="${s.id}" ${p.sp===s.id?'selected':''}>${s.name}</option>`).join('')}
-      </select>
       ${i>=2?`<button class="rm-btn" onclick="removePlayer(${i})">✕</button>`:''}
     </div>`;
   }).join('');
@@ -891,14 +978,121 @@ function shuffle(a) {
   return b;
 }
 
+// ═══════════════════════════════════════════════════════
+//  STARTING POSITION PICKER
+// ═══════════════════════════════════════════════════════
+let spPickPlayers   = [];
+let spPickIdx       = 0;
+let spPickChoices   = [];
+let spPickDoneCallback = null;
+
+function startSPPick(players, onDone) {
+  spPickPlayers      = players;
+  spPickIdx          = 0;
+  spPickChoices      = new Array(players.length).fill(null);
+  spPickDoneCallback = onDone;
+  document.getElementById('spPickOverlay').style.display = 'flex';
+  renderSPPicker();
+}
+
+function renderSPPicker() {
+  const p   = spPickPlayers[spPickIdx];
+  const soc = SOCIETIES[p.soc];
+  const fit = SP_FIT[p.soc];
+  const takenSPs = spPickChoices.filter(Boolean);
+
+  document.getElementById('spPickSocBadge').textContent = soc.icon;
+  document.getElementById('spPickTitle').textContent    =
+    p.isAI ? `${soc.icon} ${soc.name} — Choose Starting Position` : `${p.name} — Choose Your Starting Position`;
+  document.getElementById('spPickSub').textContent =
+    `Playing as ${soc.name} · Select the superpower you will control at game start`;
+
+  const sps = INIT_STATES.filter(s => s.sp);
+  document.getElementById('spPickCards').innerHTML = sps.map(sp => {
+    const f     = fit[sp.id];
+    const taken = takenSPs.includes(sp.id);
+    return `<div class="sp-card ${taken ? 'sp-taken' : ''}" onclick="selectSP('${sp.id}')">
+      <div class="sp-taken-lbl">TAKEN</div>
+      <div class="sp-fit-badge sp-fit-${f.rating}">${f.icon} ${f.label}</div>
+      <div class="sp-card-flag">${FLAGS[sp.id] || '🌍'}</div>
+      <div class="sp-card-name">${sp.name}</div>
+      <div class="sp-card-stats">⚔ ${sp.military} &nbsp;☢ ${sp.nuclear} &nbsp;♥ ${sp.patriotism} &nbsp;💎 ${sp.resources}</div>
+      <div class="sp-card-note">${f.note}</div>
+      <button class="sp-card-btn" ${taken ? 'disabled' : ''}>Select ${sp.name}</button>
+    </div>`;
+  }).join('');
+
+  const total = spPickPlayers.length;
+  document.getElementById('spPickProgress').textContent =
+    total > 1 ? `Player ${spPickIdx + 1} of ${total}` : '';
+}
+
+function selectSP(spId) {
+  spPickChoices[spPickIdx] = spId;
+  spPickIdx++;
+  if (spPickIdx >= spPickPlayers.length) {
+    document.getElementById('spPickOverlay').style.display = 'none';
+    if (spPickDoneCallback) { const fn = spPickDoneCallback; spPickDoneCallback = null; fn(spPickChoices); }
+  } else {
+    renderSPPicker();
+  }
+}
+
+function autoAssignSP(players, taken) {
+  // Silently assign the best available superpower for each player
+  const order = ['ideal','strong','fair','weak'];
+  const sps   = INIT_STATES.filter(s => s.sp);
+  players.forEach(p => {
+    const fit = SP_FIT[p.soc];
+    let best  = null;
+    for (const rating of order) {
+      best = sps.find(s => fit[s.id].rating === rating && !taken.includes(s.id));
+      if (best) break;
+    }
+    if (!best) best = sps.find(s => !taken.includes(s.id));
+    p.agents  = [best.id];
+    p.startSP = best.id;
+    taken.push(best.id);
+  });
+}
+
 function startGame() {
   const players = setupPlayers.map((p, i) => ({
-    name: p.name, soc: p.soc, isAI: gMode==='solo' ? i>0 : gMode==='sim' ? true : false,
+    name: p.name, soc: p.soc,
+    isAI: gMode==='solo' ? i>0 : gMode==='sim' ? true : false,
     ip: 8, deck: buildDeck(p.soc), hand: [], discard: [], vpScore: 0,
-    agents: [p.sp], // stateIds where this player has agents
-    startSP: p.sp,
+    agents: [], startSP: null,
   }));
 
+  if (gMode === 'sim') {
+    // All AI — auto-assign best superpower silently then start
+    autoAssignSP(players, []);
+    finishStartGame(players);
+  } else {
+    // Show the picker for all human players, then auto-assign AI
+    const humanPlayers = players.filter(p => !p.isAI);
+    const aiPlayers    = players.filter(p =>  p.isAI);
+
+    if (humanPlayers.length === 0) {
+      autoAssignSP(players, []);
+      finishStartGame(players);
+      return;
+    }
+
+    startSPPick(humanPlayers, (choices) => {
+      const taken = [];
+      choices.forEach((spId, i) => {
+        humanPlayers[i].agents  = [spId];
+        humanPlayers[i].startSP = spId;
+        taken.push(spId);
+      });
+      autoAssignSP(aiPlayers, taken);
+      finishStartGame(players);
+    });
+  }
+}
+
+function finishStartGame(players) {
   const states = INIT_STATES.map(s => ({...s, entGov:0, entEcon:0, entCult:0}));
 
   G = {
@@ -907,8 +1101,8 @@ function startGame() {
     phase: 'draw',
     drawn: false,
     vpThresh,
-    tension: 0,   // 0-10
-    stability: 10, // 10-0
+    tension: 0,
+    stability: 10,
     selCard: null, selCardIdx: null,
     agentMode: false,
     infiltrateFrom: null,
@@ -925,7 +1119,6 @@ function startGame() {
   commSkipped = false;
   showScreen('game');
   document.getElementById('vpThreshLbl').textContent = vpThresh;
-  // Show sim bar if in simulation mode
   const simBar = document.getElementById('simBar');
   simBar.classList.toggle('show', gMode==='sim');
   if (gMode==='sim') setSimSpeed('normal');
@@ -933,7 +1126,6 @@ function startGame() {
   setPhase('draw');
   renderAll();
 
-  // In sim mode, show opening brief for each player before the first turn
   if (gMode === 'sim') {
     const showNextBrief = (idx) => {
       if (idx >= G.players.length) {
@@ -2490,7 +2682,10 @@ function showScreen(id) {
   document.getElementById(id).classList.add('active');
 }
 
-function resetGame() { showScreen('setup'); }
+function resetGame() {
+  document.getElementById('spPickOverlay').style.display = 'none';
+  showScreen('setup');
+}
 
 // ═══════════════════════════════════════════════════════
 //  POPUPS
