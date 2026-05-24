@@ -342,12 +342,20 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 /* ── STARTING POSITION PICKER ── */
 #spPickOverlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:600;display:none;align-items:center;justify-content:center;}
 .sp-pick-box{background:#12122a;border:1px solid #2a2a4a;border-radius:1rem;padding:2rem 2rem 1.5rem;max-width:720px;width:92%;max-height:90vh;overflow-y:auto;}
+.sp-pick-box.ana-wide{max-width:1060px;}
+.sp-pick-box.ana-wide .sp-card{padding:.75rem .7rem .7rem;}
+.sp-pick-box.ana-wide .sp-card-flag{font-size:1.5rem;}
+.sp-pick-box.ana-wide .sp-card-name{font-size:.88rem;}
+.sp-pick-box.ana-wide .sp-card-note{font-size:.62rem;}
+.sp-pick-box.ana-wide .sp-card-ip{font-size:.66rem;}
+.sp-pick-box.ana-wide .sp-pick-cards{gap:.6rem;}
 .sp-pick-header{text-align:center;margin-bottom:1.4rem;}
 .sp-pick-soc-badge{font-size:2.8rem;margin-bottom:.4rem;line-height:1;}
 .sp-pick-title{font-size:1.25rem;font-weight:900;margin:0 0 .35rem;color:var(--text);}
 .sp-pick-sub{font-size:.72rem;color:var(--dim);margin:0;}
 .sp-pick-cards{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;}
-@media(max-width:520px){.sp-pick-cards{grid-template-columns:1fr;}}
+@media(max-width:700px){.sp-pick-cards{grid-template-columns:1fr 1fr !important;}}
+@media(max-width:420px){.sp-pick-cards{grid-template-columns:1fr !important;}}
 .sp-card{background:#1a1a30;border:2px solid #252540;border-radius:.75rem;padding:1.1rem 1rem 1rem;cursor:pointer;transition:all .15s;position:relative;display:flex;flex-direction:column;}
 .sp-card:hover{border-color:rgba(255,255,255,.28);transform:translateY(-2px);background:#1f1f3a;}
 .sp-card-flag{font-size:2rem;margin-bottom:.3rem;line-height:1;}
@@ -761,6 +769,20 @@ const SP_FIT = {
 };
 
 // ═══════════════════════════════════════════════════════
+//  ANARCHIST STARTING OPTIONS (non-superpower states)
+// ═══════════════════════════════════════════════════════
+const ANA_STARTS = [
+  { id:'GER', note:"The highest-resource non-superpower on the board. A capitalist republic at the centre of Europe — prosperous, over-administered, and ready to crack. 4 starting IP and access to every corner of the map." },
+  { id:'FRA', note:"The heart of Europe. Republican institutions are brittle under sustained pressure. Neighbouring states are ripe for anarchist seed — this is the board's most connected node outside the superpowers." },
+  { id:'IRN', note:"Oil wealth gives 4 starting IP — rare for a non-superpower. A religious capitalist state full of contradictions, perfectly positioned to spark chaos across the Middle East." },
+  { id:'BRZ', note:"South America's giant. Four starting IP, high patriotism, and continent-wide reach. An Anarchist based here can reshape the entire southern board before the superpowers notice." },
+  { id:'IND', note:"The subcontinent's military strength and mass population provide an imposing base. Communist culture and religious identity create internal contradictions ready to ignite." },
+  { id:'EGY', note:"The Arab world's pivot point. Communist culture and high patriotism make Egypt susceptible to mass upheaval. A gateway to Africa, the Gulf, and the Mediterranean at once." },
+  { id:'MEX', note:"In America's shadow but not under its thumb. Mexico's proximity to the USA makes it a persistent thorn in the superpower's side — an ideal launchpad for western hemisphere disruption." },
+  { id:'TUR', note:"Straddling Europe and the Middle East, Turkey's crossroads position gives Anarchists unmatched reach. Religious culture and moderate military make destabilisation achievable early." },
+];
+
+// ═══════════════════════════════════════════════════════
 //  STATES  (5×5 grid, superpowers at corners)
 // ═══════════════════════════════════════════════════════
 const INIT_STATES = [
@@ -921,7 +943,7 @@ function setThresh(v) {
 }
 
 function addPlayer() {
-  if (setupPlayers.length >= 4) return;
+  if (setupPlayers.length >= 5) return;
   const ids = Object.keys(SOCIETIES);
   const used = setupPlayers.map(p=>p.soc);
   const next = ids.find(id=>!used.includes(id)) || ids[0];
@@ -953,7 +975,7 @@ function renderSetupPlayers() {
 
   // hide Add Player button at 4 players or in solo/sim mode
   const addBtn = document.getElementById('addPBtn');
-  if (addBtn) addBtn.style.display = (gMode==='solo' || gMode==='sim' || setupPlayers.length >= 4) ? 'none' : '';
+  if (addBtn) addBtn.style.display = (gMode==='solo' || gMode==='sim' || setupPlayers.length >= 5) ? 'none' : '';
 
   // update society buttons highlighting
   document.querySelectorAll('#socGrid .soc-btn').forEach(btn => {
@@ -1007,24 +1029,43 @@ function renderSPPicker() {
   const fit = SP_FIT[p.soc];
   const takenSPs = spPickChoices.filter(Boolean);
 
+  const isAna = p.soc === 'ANA';
+
+  document.querySelector('.sp-pick-box').classList.toggle('ana-wide', isAna);
   document.getElementById('spPickSocBadge').textContent = soc.icon;
   document.getElementById('spPickTitle').textContent    =
     p.isAI ? `${soc.icon} ${soc.name} — Choose Starting Position` : `${p.name} — Choose Your Starting Position`;
-  document.getElementById('spPickSub').textContent =
-    `Playing as ${soc.name} · Select the superpower you will control at game start`;
+  document.getElementById('spPickSub').textContent = isAna
+    ? `Playing as ${soc.name} · Anarchists start in the contested middle — choose your flashpoint`
+    : `Playing as ${soc.name} · Select the superpower you will control at game start`;
 
-  const sps = INIT_STATES.filter(s => s.sp);
-  document.getElementById('spPickCards').innerHTML = sps.map(sp => {
-    const f     = fit[sp.id];
+  // ANA picks from curated non-SP states; all others pick from the 4 superpowers
+  const pool = isAna
+    ? ANA_STARTS.map(a => ({ ...INIT_STATES.find(s => s.id === a.id), _note: a.note }))
+    : INIT_STATES.filter(s => s.sp);
+
+  // Widen the grid for ANA (8 cards instead of 4)
+  document.getElementById('spPickCards').style.gridTemplateColumns = isAna ? 'repeat(4, 1fr)' : '';
+
+  document.getElementById('spPickCards').innerHTML = pool.map(sp => {
     const taken = takenSPs.includes(sp.id);
+    let badge = '', note = '';
+    if (isAna) {
+      note  = sp._note;
+      badge = `<div class="sp-fit-badge sp-fit-fair">🏴 ANARCHIST</div>`;
+    } else {
+      const f = fit[sp.id];
+      note  = f.note;
+      badge = `<div class="sp-fit-badge sp-fit-${f.rating}">${f.icon} ${f.label}</div>`;
+    }
     return `<div class="sp-card ${taken ? 'sp-taken' : ''}" onclick="selectSP('${sp.id}')">
       <div class="sp-taken-lbl">TAKEN</div>
-      <div class="sp-fit-badge sp-fit-${f.rating}">${f.icon} ${f.label}</div>
+      ${badge}
       <div class="sp-card-flag">${FLAGS[sp.id] || '🌍'}</div>
       <div class="sp-card-name">${sp.name}</div>
       <div class="sp-card-ip">Starts with <strong>${sp.resources} 💠 IP</strong></div>
       <div class="sp-card-stats">⚔ ${sp.military} &nbsp;☢ ${sp.nuclear} &nbsp;♥ ${sp.patriotism} &nbsp;💎 ${sp.resources}</div>
-      <div class="sp-card-note">${f.note}</div>
+      <div class="sp-card-note">${note}</div>
       <button class="sp-card-btn" ${taken ? 'disabled' : ''}>Select ${sp.name}</button>
     </div>`;
   }).join('');
@@ -1050,13 +1091,20 @@ function autoAssignSP(players, taken) {
   const order = ['ideal','strong','fair','weak'];
   const sps   = INIT_STATES.filter(s => s.sp);
   players.forEach(p => {
-    const fit = SP_FIT[p.soc];
-    let best  = null;
-    for (const rating of order) {
-      best = sps.find(s => fit[s.id].rating === rating && !taken.includes(s.id));
-      if (best) break;
+    let best = null;
+    if (p.soc === 'ANA') {
+      // Anarchists pick from curated non-SP pool, sorted by resources desc
+      const pool = ANA_STARTS.map(a => INIT_STATES.find(s => s.id === a.id));
+      best = pool.find(s => s && !taken.includes(s.id));
+    } else {
+      const fit = SP_FIT[p.soc];
+      for (const rating of order) {
+        best = sps.find(s => fit[s.id].rating === rating && !taken.includes(s.id));
+        if (best) break;
+      }
+      if (!best) best = sps.find(s => !taken.includes(s.id));
     }
-    if (!best) best = sps.find(s => !taken.includes(s.id));
+    if (!best) return; // safety — shouldn't happen with 5 players
     p.agents  = [best.id];
     p.startSP = best.id;
     taken.push(best.id);
