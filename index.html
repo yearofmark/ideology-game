@@ -461,23 +461,23 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 const SOCIETIES = {
   TCH: { id:'TCH', name:'Technocrats',  icon:'🔬', color:'#3498db',
     desc:'Republic + Secular + Patriotism',
-    vpDesc:'VP: Each Republic with Secular culture and any Patriotism',
+    vpDesc:'VP: Your agents in Republics with Secular culture and Patriotism',
     vpCheck: s => s.gov==='republic' && s.cult==='secular' && s.patriotism > 0 },
   THE: { id:'THE', name:'Theocrats',    icon:'✝',  color:'#9b59b6',
     desc:'Dictatorship + Religious + Patriotism',
-    vpDesc:'VP: Each Dictatorship with Religious culture and any Patriotism',
+    vpDesc:'VP: Your agents in Dictatorships with Religious culture and Patriotism',
     vpCheck: s => s.gov==='dictatorship' && s.cult==='religious' && s.patriotism > 0 },
   PLU: { id:'PLU', name:'Plutocrats',   icon:'💰', color:'#f39c12',
     desc:'Capitalist state with Nuclear Arms',
-    vpDesc:'VP: Each Capitalist state with any Nuclear stockpile',
+    vpDesc:'VP: Your agents in Capitalist states with a Nuclear stockpile',
     vpCheck: s => s.econ==='capitalist' && s.nuclear > 0 },
   STR: { id:'STR', name:'Stratocrats',  icon:'⚔',  color:'#e74c3c',
     desc:'Communist state with Conventional Military',
-    vpDesc:'VP: Each Communist state with Military ≥ 3',
+    vpDesc:'VP: Your agents in Communist states with Military ≥ 3',
     vpCheck: s => s.econ==='communist' && s.military >= 3 },
   ANA: { id:'ANA', name:'Anarchists',   icon:'🏴', color:'#1abc9c',
     desc:'Provisional government with Cultural presence',
-    vpDesc:'VP: Each Provisional government with any Patriotism',
+    vpDesc:'VP: Your agents in Provisional governments with Patriotism',
     vpCheck: s => s.gov==='provisional' && s.patriotism > 0 },
 };
 
@@ -845,7 +845,7 @@ function renderTurnHeader() {
 // ═══════════════════════════════════════════════════════
 function calcVP(player) {
   const soc = SOCIETIES[player.soc];
-  return G.states.filter(s => soc.vpCheck(s)).length;
+  return G.states.filter(s => player.agents.includes(s.id) && soc.vpCheck(s)).length;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1383,11 +1383,14 @@ function showStatePopup(sid) {
     </div>
 
     <div class="popup-section">
-      <div class="popup-section-lbl">Scores VP For</div>
+      <div class="popup-section-lbl">VP Value · agent required to score</div>
       <div class="popup-vp-chips">
         ${vpSocieties.length
-          ? vpSocieties.map(soc => `<span class="popup-vp-chip" style="background:${soc.color}22;color:${soc.color};border:1px solid ${soc.color}44">${soc.icon} ${soc.name}</span>`).join('')
-          : '<span style="color:var(--dim);font-size:.75rem">No society currently scores this state</span>'}
+          ? vpSocieties.map(soc => {
+              const hasAgent = G.players.some(p => p.soc===soc.id && p.agents.includes(s.id));
+              return `<span class="popup-vp-chip" style="background:${soc.color}${hasAgent?'44':'15'};color:${soc.color};border:1px solid ${soc.color}${hasAgent?'99':'33'};${hasAgent?'font-weight:900':''}">${soc.icon} ${soc.name}${hasAgent?' ✓':''}</span>`;
+            }).join('')
+          : '<span style="color:var(--dim);font-size:.75rem">No society values this state</span>'}
       </div>
     </div>
 
@@ -1536,7 +1539,7 @@ function rulesPlay() {
 
   <div class="r-sec">
     <div class="r-sec-lbl">Objective</div>
-    <div class="r-row"><div class="r-icon">🏆</div><div class="r-text">Be the first Secret Society to reach <b>${thresh} Victory Points</b>. VP is earned by controlling states that match your society's ideology.</div></div>
+    <div class="r-row"><div class="r-icon">🏆</div><div class="r-text">Be the first Secret Society to reach <b>${thresh} Victory Points</b>. VP is earned for each state where <b>you have an agent present</b> that matches your society's ideology — all players start at zero.</div></div>
   </div>
 
   <div class="r-sec">
@@ -1568,12 +1571,12 @@ function rulesPlay() {
 
   <div class="r-sec">
     <div class="r-sec-lbl">State Attributes</div>
-    <div class="r-row"><div class="r-icon">🗳</div><div class="r-text"><b>Government:</b> Republic · Monarchy · Dictatorship · Provisional. Determines which societies score VP here.</div></div>
-    <div class="r-row"><div class="r-icon">💹</div><div class="r-text"><b>Economy:</b> Capitalist or Communist. Affects VP scoring and resource sharing between allied states.</div></div>
-    <div class="r-row"><div class="r-icon">✝</div><div class="r-text"><b>Culture:</b> Secular or Religious. Used in VP conditions and can be flipped with cultural cards.</div></div>
-    <div class="r-row"><div class="r-icon">⚔</div><div class="r-text"><b>Military (0–10):</b> Conventional forces. Required for Stratocrat VP and certain card effects.</div></div>
-    <div class="r-row"><div class="r-icon">☢</div><div class="r-text"><b>Nuclear (0–5):</b> Deterrence stockpile. Raises Global Tension. Plutocrats score VP from armed capitalist states.</div></div>
-    <div class="r-row"><div class="r-icon">♥</div><div class="r-text"><b>Patriotism (0–10):</b> Cultural strength. Required for Technocrat, Theocrat, and Anarchist VP.</div></div>
+    <div class="r-row"><div class="r-icon">🗳</div><div class="r-text"><b>Government:</b> Republic · Monarchy · Dictatorship · Provisional. Determines VP value — an agent here scores for matching societies.</div></div>
+    <div class="r-row"><div class="r-icon">💹</div><div class="r-text"><b>Economy:</b> Capitalist or Communist. Affects VP value and resource sharing between allied states.</div></div>
+    <div class="r-row"><div class="r-icon">✝</div><div class="r-text"><b>Culture:</b> Secular or Religious. Factors into VP conditions and can be flipped with cultural cards.</div></div>
+    <div class="r-row"><div class="r-icon">⚔</div><div class="r-text"><b>Military (0–10):</b> Conventional forces. Stratocrats score VP when their agent is in a Communist state with Military ≥ 3.</div></div>
+    <div class="r-row"><div class="r-icon">☢</div><div class="r-text"><b>Nuclear (0–5):</b> Deterrence stockpile. Raises Global Tension. Plutocrats score VP from armed capitalist states where they have an agent.</div></div>
+    <div class="r-row"><div class="r-icon">♥</div><div class="r-text"><b>Patriotism (0–10):</b> Cultural strength. Required condition for Technocrat, Theocrat, and Anarchist VP (with agent present).</div></div>
     <div class="r-row"><div class="r-icon">💎</div><div class="r-text"><b>Resources (0–10):</b> Economic output. Not directly tied to VP, but some cards generate IP from high-resource states.</div></div>
   </div>
 
@@ -1603,11 +1606,11 @@ function rulesSocieties() {
 
 function vpConditionText(id) {
   const map = {
-    TCH: 'Government = Republic  AND  Culture = Secular  AND  Patriotism > 0',
-    THE: 'Government = Dictatorship  AND  Culture = Religious  AND  Patriotism > 0',
-    PLU: 'Economy = Capitalist  AND  Nuclear > 0',
-    STR: 'Economy = Communist  AND  Military ≥ 3',
-    ANA: 'Government = Provisional  AND  Patriotism > 0',
+    TCH: 'Your agent present  AND  Government = Republic  AND  Culture = Secular  AND  Patriotism > 0',
+    THE: 'Your agent present  AND  Government = Dictatorship  AND  Culture = Religious  AND  Patriotism > 0',
+    PLU: 'Your agent present  AND  Economy = Capitalist  AND  Nuclear > 0',
+    STR: 'Your agent present  AND  Economy = Communist  AND  Military ≥ 3',
+    ANA: 'Your agent present  AND  Government = Provisional  AND  Patriotism > 0',
   };
   return map[id] || '—';
 }

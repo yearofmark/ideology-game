@@ -297,7 +297,7 @@
     <div class="sec-label">Objective</div>
     <div class="r-row">
       <div class="r-icon">🏆</div>
-      <div class="r-text">Be the first Secret Society to reach <b>13 Victory Points</b> (configurable). VP is earned by controlling states that match your society's ideology — the more aligned states you dominate, the faster you win.</div>
+      <div class="r-text">Be the first Secret Society to reach <b>13 Victory Points</b> (configurable). VP is earned for each state where <b>you have an agent present</b> that matches your society's ideology — all players start at zero. Move agents into high-value states and reshape their attributes to score.</div>
     </div>
 
     <div class="sec-label">Turn Structure</div>
@@ -323,12 +323,12 @@
     </div>
 
     <div class="sec-label">State Attributes</div>
-    <div class="r-row"><div class="r-icon">🗳</div><div class="r-text"><b>Government:</b> Republic · Monarchy · Dictatorship · Provisional. Determines which societies score VP here.</div></div>
-    <div class="r-row"><div class="r-icon">💹</div><div class="r-text"><b>Economy:</b> Capitalist or Communist. Affects VP scoring and resource sharing between allied states.</div></div>
-    <div class="r-row"><div class="r-icon">✝</div><div class="r-text"><b>Culture:</b> Secular or Religious. Used in VP conditions and flipped with cultural cards.</div></div>
-    <div class="r-row"><div class="r-icon">⚔</div><div class="r-text"><b>Military (0–10):</b> Conventional forces. Required for Stratocrat VP and coup/mutiny effects.</div></div>
-    <div class="r-row"><div class="r-icon">☢</div><div class="r-text"><b>Nuclear (0–5):</b> Deterrence stockpile. Raises Global Tension. Plutocrats score VP from armed capitalist states.</div></div>
-    <div class="r-row"><div class="r-icon">♥</div><div class="r-text"><b>Patriotism (0–10):</b> Cultural strength. Required for Technocrat, Theocrat, and Anarchist VP.</div></div>
+    <div class="r-row"><div class="r-icon">🗳</div><div class="r-text"><b>Government:</b> Republic · Monarchy · Dictatorship · Provisional. Determines VP potential — an agent here scores for matching societies.</div></div>
+    <div class="r-row"><div class="r-icon">💹</div><div class="r-text"><b>Economy:</b> Capitalist or Communist. Factors into VP conditions for Plutocrats and Stratocrats (with agent present).</div></div>
+    <div class="r-row"><div class="r-icon">✝</div><div class="r-text"><b>Culture:</b> Secular or Religious. Factors into VP conditions for Technocrats and Theocrats (with agent present).</div></div>
+    <div class="r-row"><div class="r-icon">⚔</div><div class="r-text"><b>Military (0–10):</b> Conventional forces. Stratocrats score VP when their agent is in a Communist state with Military ≥ 3.</div></div>
+    <div class="r-row"><div class="r-icon">☢</div><div class="r-text"><b>Nuclear (0–5):</b> Deterrence stockpile. Raises Global Tension. Plutocrats score VP from Capitalist states with Nuclear where they have an agent.</div></div>
+    <div class="r-row"><div class="r-icon">♥</div><div class="r-text"><b>Patriotism (0–10):</b> Cultural strength. Required VP condition for Technocrats, Theocrats, and Anarchists (with agent present).</div></div>
     <div class="r-row"><div class="r-icon">💎</div><div class="r-text"><b>Resources (0–10):</b> Economic output. Some cards generate IP from high-resource states.</div></div>
 
     <div class="sec-label">Global Danger Meters</div>
@@ -355,37 +355,37 @@
 
       <div class="soc-card" style="border-color:#3498db55">
         <div class="soc-name" style="color:#3498db">🔬 Technocrats</div>
-        <div class="soc-desc">VP: Each Republic with Secular culture and any Patriotism scores 1 VP.</div>
+        <div class="soc-desc">Score 1 VP for each state where your agent is present and the state is a Republic with Secular culture and Patriotism.</div>
         <div class="soc-cond-label">VP Condition</div>
-        <div class="soc-cond">Government = Republic<br>AND Culture = Secular<br>AND Patriotism &gt; 0</div>
+        <div class="soc-cond">Your agent present<br>AND Government = Republic<br>AND Culture = Secular<br>AND Patriotism &gt; 0</div>
       </div>
 
       <div class="soc-card" style="border-color:#9b59b655">
         <div class="soc-name" style="color:#9b59b6">✝ Theocrats</div>
-        <div class="soc-desc">VP: Each Dictatorship with Religious culture and any Patriotism scores 1 VP.</div>
+        <div class="soc-desc">Score 1 VP for each state where your agent is present and the state is a Dictatorship with Religious culture and Patriotism.</div>
         <div class="soc-cond-label">VP Condition</div>
-        <div class="soc-cond">Government = Dictatorship<br>AND Culture = Religious<br>AND Patriotism &gt; 0</div>
+        <div class="soc-cond">Your agent present<br>AND Government = Dictatorship<br>AND Culture = Religious<br>AND Patriotism &gt; 0</div>
       </div>
 
       <div class="soc-card" style="border-color:#f39c1255">
         <div class="soc-name" style="color:#f39c12">💰 Plutocrats</div>
-        <div class="soc-desc">VP: Each Capitalist state with any Nuclear stockpile scores 1 VP.</div>
+        <div class="soc-desc">Score 1 VP for each state where your agent is present and the state is Capitalist with a Nuclear stockpile.</div>
         <div class="soc-cond-label">VP Condition</div>
-        <div class="soc-cond">Economy = Capitalist<br>AND Nuclear &gt; 0</div>
+        <div class="soc-cond">Your agent present<br>AND Economy = Capitalist<br>AND Nuclear &gt; 0</div>
       </div>
 
       <div class="soc-card" style="border-color:#e74c3c55">
         <div class="soc-name" style="color:#e74c3c">⚔ Stratocrats</div>
-        <div class="soc-desc">VP: Each Communist state with Military ≥ 3 scores 1 VP.</div>
+        <div class="soc-desc">Score 1 VP for each state where your agent is present and the state is Communist with Military ≥ 3.</div>
         <div class="soc-cond-label">VP Condition</div>
-        <div class="soc-cond">Economy = Communist<br>AND Military ≥ 3</div>
+        <div class="soc-cond">Your agent present<br>AND Economy = Communist<br>AND Military ≥ 3</div>
       </div>
 
       <div class="soc-card" style="border-color:#1abc9c55">
         <div class="soc-name" style="color:#1abc9c">🏴 Anarchists</div>
-        <div class="soc-desc">VP: Each Provisional government with any Patriotism scores 1 VP.</div>
+        <div class="soc-desc">Score 1 VP for each state where your agent is present and the state is a Provisional government with Patriotism.</div>
         <div class="soc-cond-label">VP Condition</div>
-        <div class="soc-cond">Government = Provisional<br>AND Patriotism &gt; 0</div>
+        <div class="soc-cond">Your agent present<br>AND Government = Provisional<br>AND Patriotism &gt; 0</div>
       </div>
 
     </div>
