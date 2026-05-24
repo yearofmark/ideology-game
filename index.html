@@ -270,6 +270,26 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .sim-spd-btn.active{background:rgba(255,255,255,.1);color:#fff;border-color:#666;}
 .sim-pause{padding:3px 10px;border-radius:4px;border:1px solid rgba(241,196,15,.4);background:rgba(241,196,15,.07);color:#f1c40f;font-size:.62rem;cursor:pointer;}
 .sim-pause:hover{background:rgba(241,196,15,.15);}
+
+/* ── AI COMMENTARY OVERLAY ── */
+.commentary-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;display:none;align-items:center;justify-content:center;}
+.commentary-overlay.show{display:flex;}
+.commentary-box{background:#13132a;border:1px solid #2e2e50;border-radius:1rem;padding:1.6rem 1.8rem 1.4rem;width:min(480px,92vw);box-shadow:0 1.5rem 4rem rgba(0,0,0,.75);position:relative;}
+.comm-header{display:flex;align-items:center;gap:.7rem;margin-bottom:1rem;padding-bottom:.85rem;border-bottom:1px solid #2a2a45;}
+.comm-avatar{width:2.4rem;height:2.4rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;border:2px solid rgba(255,255,255,.15);}
+.comm-who{flex:1;}
+.comm-name{font-size:.85rem;font-weight:900;letter-spacing:.3px;}
+.comm-society{font-size:.62rem;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-top:1px;}
+.comm-card-pill{display:flex;align-items:center;gap:.4rem;padding:.25rem .7rem;border-radius:2rem;font-size:.75rem;font-weight:bold;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);}
+.comm-card-icon{font-size:1rem;}
+.comm-target{margin:.75rem 0;padding:.5rem .75rem;border-radius:.5rem;background:rgba(255,255,255,.04);border:1px solid #2a2a45;font-size:.75rem;color:#ccc;}
+.comm-target b{color:#fff;}
+.comm-reasoning{font-size:.82rem;line-height:1.65;color:#c8c8d8;margin:.75rem 0 1.1rem;}
+.comm-reasoning em{color:#f1c40f;font-style:normal;font-weight:bold;}
+.comm-continue{width:100%;padding:.65rem;border-radius:.45rem;border:none;background:linear-gradient(135deg,#2980b9,#1a5276);color:#fff;font-size:.82rem;font-weight:bold;cursor:pointer;letter-spacing:1px;transition:opacity .15s;}
+.comm-continue:hover{opacity:.85;}
+.comm-turn-skip{margin-top:.5rem;width:100%;padding:.4rem;border-radius:.35rem;border:1px solid var(--border);background:transparent;color:var(--dim);font-size:.7rem;cursor:pointer;}
+.comm-turn-skip:hover{color:var(--text);background:rgba(255,255,255,.04);}
 </style>
 </head>
 <body>
@@ -291,6 +311,24 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     <button class="rules-close" onclick="closeRules()">✕</button>
     <div class="rules-tabs" id="rulesTabs"></div>
     <div class="rules-body" id="rulesBody"></div>
+  </div>
+</div>
+
+<!-- ══════════ AI COMMENTARY ══════════ -->
+<div class="commentary-overlay" id="commOverlay">
+  <div class="commentary-box">
+    <div class="comm-header">
+      <div class="comm-avatar" id="commAvatar"></div>
+      <div class="comm-who">
+        <div class="comm-name" id="commName"></div>
+        <div class="comm-society" id="commSociety"></div>
+      </div>
+      <div class="comm-card-pill" id="commCard"></div>
+    </div>
+    <div class="comm-target" id="commTarget" style="display:none"></div>
+    <div class="comm-reasoning" id="commReasoning"></div>
+    <button class="comm-continue" onclick="resumeFromCommentary()">▶ Continue</button>
+    <button class="comm-turn-skip" onclick="skipCommentary()">Skip commentary for this game</button>
   </div>
 </div>
 
@@ -755,6 +793,7 @@ function startGame() {
   players.forEach(p => { for(let i=0;i<4;i++) dealCard(p); });
 
   simPaused = false;
+  commSkipped = false;
   showScreen('game');
   document.getElementById('vpThreshLbl').textContent = vpThresh;
   // Show sim bar if in simulation mode
@@ -1401,6 +1440,190 @@ function showWin(winner, vp) {
 }
 
 // ═══════════════════════════════════════════════════════
+//  AI COMMENTARY
+// ═══════════════════════════════════════════════════════
+let commSkipped = false;
+let commResumeCallback = null;
+
+const SOC_VOICE = {
+  TCH: ['Analysis confirms', 'Optimal sequencing requires', 'Rational projection indicates', 'The data supports', 'Calculated efficiency demands'],
+  THE: ['Divine providence guides', 'The faithful must act', 'God\'s will is clear', 'Sacred duty demands', 'The righteous path leads'],
+  PLU: ['ROI analysis favors', 'The smart money moves', 'Market conditions dictate', 'Profit motive is clear', 'The investment case is strong'],
+  STR: ['The people\'s vanguard advances', 'Comrades, the strategy is', 'Revolutionary discipline calls for', 'The proletarian cause demands', 'Our forces must'],
+  ANA: ['The old order must fall', 'Chaos is the strategy', 'Every system is a target', 'Tear it down and', 'Control through collapse means'],
+};
+
+function genReasoning(player, card, targetSid) {
+  const soc = SOCIETIES[player.soc];
+  const target = targetSid ? getState(targetSid) : null;
+  const myVP = calcVP(player);
+  const myAgents = player.agents.length;
+  const voice = SOC_VOICE[player.soc];
+  const opener = voice[Math.floor(Math.random()*voice.length)];
+
+  // Power card reasoning
+  if (card.power) {
+    const t = target;
+    return `${opener}: this single play reshapes <em>${t?.name||'the target state'}</em> entirely and deploys our agent in one move. `
+      + `We bypass years of incremental influence — the state becomes ideologically aligned the moment the card resolves. `
+      + `With <em>${myVP} VP</em> on the board and <em>${myAgents} agent${myAgents!==1?'s':''}</em> active, a decisive strike here is more efficient than slow card-by-card conversion.`;
+  }
+
+  // Reasoning based on card effect
+  const effect = card.effect;
+
+  // Agent placement
+  if (effect === 'recruit') {
+    const adjVP = target ? (soc.vpCheck(target) ? 'already scores VP for us' : 'does not yet score VP, but positions us for future plays') : 'expands our reach';
+    return `${opener}: expanding our agent network is the priority. Each additional agent earns <em>+1 IP per turn</em> — compounding income that funds future operations. `
+      + `${target?.name||'This state'} ${adjVP}. More agents means more turns where we can act, and more VP states we can occupy.`;
+  }
+  if (effect === 'infiltrate') {
+    return `${opener}: repositioning an agent is free influence. Moving into a better-positioned state without spending IP is pure efficiency — `
+      + `${target ? `<em>${target.name}</em> offers ${soc.vpCheck(target)?'immediate VP scoring':'strategic adjacency to VP targets'}` : 'the new position opens better plays next turn'}.`;
+  }
+
+  // Checks whether the target currently scores VP
+  const currentlyScores = target && soc.vpCheck(target);
+  const wouldScore = target && (() => {
+    // Simulate what the state would look like after this effect
+    const sim = {...target};
+    if (effect==='lobbying'||effect==='reform_gov') sim.gov='republic';
+    if (effect==='coup') { sim.gov='dictatorship'; sim.military=Math.min(10,sim.military+2); }
+    if (effect==='assassinate'||effect==='mutiny'||effect==='revolution') sim.gov='provisional';
+    if (effect==='set_religious'||effect==='revivalism') sim.cult='religious';
+    if (effect==='set_secular'||effect==='secularize') sim.cult='secular';
+    if (effect==='set_capitalist'||effect==='set_capitalist2'||effect==='free_trade'||effect==='privatize') sim.econ='capitalist';
+    if (effect==='set_communist'||effect==='nationalize') sim.econ='communist';
+    if (effect==='add_military'||effect==='arms_buildup') sim.military=Math.min(10,sim.military+3);
+    if (effect==='add_nuclear'||effect==='nuke_threat') sim.nuclear=Math.min(5,sim.nuclear+1);
+    if (effect==='build_nuclear'||effect==='build_nukes') sim.nuclear=Math.min(5,sim.nuclear+2);
+    if (effect==='add_patriotism'||effect==='propaganda') sim.patriotism=Math.min(5,sim.patriotism+3);
+    return soc.vpCheck(sim);
+  })();
+
+  // Government flips
+  if (['gov_step','lobbying','reform_gov','coup','assassinate','mutiny','revolution'].includes(effect)) {
+    if (wouldScore && !currentlyScores) {
+      return `${opener}: <em>${target?.name}</em> is one government shift away from scoring VP. `
+        + `${card.name} makes that flip immediately. At <em>${myVP} VP</em> we need to convert states efficiently — `
+        + `aligning a government we already have an agent in is the highest-value play available this turn.`;
+    }
+    if (currentlyScores) {
+      return `${opener}: <em>${target?.name}</em> already scores VP, but ${card.name} may open downstream options — `
+        + `changing government form can destabilize opponents' scoring or unlock adjacency for new agents.`;
+    }
+    return `${opener}: <em>${target?.name}</em> needs government reshaping before it can score VP for us. `
+      + `${card.name} moves it along that path. Even without an immediate VP payoff, alignment takes time and we're building now for later rounds.`;
+  }
+
+  // Economy flips
+  if (['set_capitalist','set_capitalist2','free_trade','privatize','set_communist','nationalize'].includes(effect)) {
+    if (wouldScore && !currentlyScores) {
+      return `${opener}: flipping <em>${target?.name}</em>'s economy with ${card.name} converts it into a VP-scoring state on the spot. `
+        + `We already have an agent there — the state just needed this economic realignment to start counting. `
+        + `This is the most direct path to <em>${myVP+1} VP</em>.`;
+    }
+    return `${opener}: the economic base of <em>${target?.name}</em> must be aligned before other conditions can be met. `
+      + `${card.name} lays that groundwork. Economy is the hardest attribute to flip later under entrenchment — better to do it early.`;
+  }
+
+  // Culture flips
+  if (['set_religious','revivalism','set_secular','secularize'].includes(effect)) {
+    if (wouldScore && !currentlyScores) {
+      return `${opener}: cultural alignment of <em>${target?.name}</em> is the missing piece. `
+        + `${card.name} flips the culture, and combined with the existing attributes, this state immediately scores VP. `
+        + `Culture cards are inexpensive — this is an efficient VP conversion.`;
+    }
+    return `${opener}: <em>${target?.name}</em> needs its cultural identity reshaped. ${card.name} handles that. `
+      + `Culture is the fastest attribute to entrench, so acting early prevents a costly reversal later.`;
+  }
+
+  // Military / nuclear
+  if (['add_military','arms_buildup'].includes(effect)) {
+    if (wouldScore && !currentlyScores) {
+      return `${opener}: <em>${target?.name}</em> is just below the military threshold for VP scoring. `
+        + `${card.name} pushes it over. Spending <em>${card.cost} IP</em> to unlock a VP-scoring state is strongly positive value.`;
+    }
+    return `${opener}: building military strength in <em>${target?.name}</em> prepares it for VP scoring once economic alignment is in place. `
+      + `Fortified states also resist opponents' destabilisation attempts.`;
+  }
+  if (['add_nuclear','nuke_threat','build_nuclear','build_nukes'].includes(effect)) {
+    if (wouldScore && !currentlyScores) {
+      return `${opener}: <em>${target?.name}</em> is capitalist but has no nuclear deterrent — adding one immediately triggers VP scoring for us. `
+        + `Yes, this raises Global Tension, but a VP scoring state is worth the risk at <em>${myVP} VP</em>.`;
+    }
+    return `${opener}: nuclear development in <em>${target?.name}</em> is a prerequisite for VP scoring once the economy aligns. `
+      + `Early nuclear buildup also deters opponents from playing disarmament cards on us later.`;
+  }
+  if (effect==='disarm') {
+    return `${opener}: removing nuclear stockpile from <em>${target?.name}</em> denies an opponent a VP-scoring state. `
+      + `Tension reduction is a side benefit — the real goal is keeping their VP count suppressed while we build ours.`;
+  }
+
+  // Patriotism
+  if (['add_patriotism','propaganda','cult_exchange'].includes(effect)) {
+    if (wouldScore && !currentlyScores) {
+      return `${opener}: <em>${target?.name}</em> has zero Patriotism — without it, this state cannot score VP regardless of government or culture. `
+        + `${card.name} resolves that gap immediately, unlocking VP scoring in a state we're already occupying.`;
+    }
+    return `${opener}: Patriotism in <em>${target?.name}</em> needs to be higher before VP conditions can be met. `
+      + `Building cultural momentum now makes future plays cheaper and locks out opponents who rely on low-Patriotism states.`;
+  }
+
+  // Sanctions / economic disruption
+  if (effect==='sanctions') {
+    const victim = G.players.find((op,i) => i!==G.players.indexOf(player) && op.agents.includes(targetSid));
+    return `${opener}: <em>${target?.name}</em> hosts ${victim?`<em>${victim.name}</em>'s agent`:'an opponent'}. `
+      + `${card.name} drains their IP and weakens the state's resource base. Disrupting their income delays key plays and buys us turns to widen our VP lead.`;
+  }
+
+  // Default fallback
+  return `${opener}: ${card.name} on <em>${target?.name||'this state'}</em> advances our strategic position. `
+    + `Current VP: <em>${myVP}</em>. Active agents: <em>${myAgents}</em>. Every play either scores VP, builds toward scoring, or denies the opponent.`;
+}
+
+function showCommentary(player, card, targetSid, onContinue) {
+  if (commSkipped || gMode !== 'sim') { onContinue(); return; }
+  const soc = SOCIETIES[player.soc];
+  const target = targetSid ? getState(targetSid) : null;
+
+  document.getElementById('commAvatar').textContent = soc.icon;
+  document.getElementById('commAvatar').style.background = soc.color+'33';
+  document.getElementById('commAvatar').style.borderColor = soc.color+'66';
+  document.getElementById('commName').textContent = player.name;
+  document.getElementById('commName').style.color = soc.color;
+  document.getElementById('commSociety').textContent = soc.name + ' · ' + (card.power ? 'POWER CARD' : card.type.toUpperCase());
+
+  const pill = document.getElementById('commCard');
+  pill.innerHTML = `<span class="comm-card-icon">${card.icon}</span> ${card.name} · ${card.cost}💠`;
+  pill.style.color = card.power ? '#ffd700' : '#ccc';
+  pill.style.borderColor = card.power ? 'rgba(255,215,0,.3)' : 'rgba(255,255,255,.12)';
+
+  const tEl = document.getElementById('commTarget');
+  if (target) {
+    tEl.style.display = '';
+    tEl.innerHTML = `🎯 Target: <b>${target.name}</b> · ${target.gov} · ${target.econ} · ${target.cult} · Mil ${target.military} · Nuc ${target.nuclear} · Pat ${target.patriotism}`;
+  } else {
+    tEl.style.display = 'none';
+  }
+
+  document.getElementById('commReasoning').innerHTML = genReasoning(player, card, targetSid);
+  commResumeCallback = onContinue;
+  document.getElementById('commOverlay').classList.add('show');
+}
+
+function resumeFromCommentary() {
+  document.getElementById('commOverlay').classList.remove('show');
+  if (commResumeCallback) { const fn = commResumeCallback; commResumeCallback = null; fn(); }
+}
+
+function skipCommentary() {
+  commSkipped = true;
+  resumeFromCommentary();
+}
+
+// ═══════════════════════════════════════════════════════
 //  AI
 // ═══════════════════════════════════════════════════════
 function aiTurn() {
@@ -1445,6 +1668,16 @@ function aiTurn() {
       if (c.effect==='infiltrate') G.infiltrateFrom = p.agents[0];
       applyEffect(c.effect, G.players.indexOf(p), targetSid);
       logE(`${p.name} (AI) plays <strong>${c.name}</strong>${targetSid?' on '+getState(targetSid).name:''}.`);
+      renderAll();
+
+      // In sim mode, pause and explain the play before continuing to end turn
+      if (gMode === 'sim') {
+        showCommentary(p, c, targetSid, () => {
+          const aiDelay = Math.floor(SIM_DELAYS[simSpeed]*0.6);
+          setTimeout(() => { if (!simPaused) doEndTurn(); else waitForResume(doEndTurn); }, aiDelay);
+        });
+        return; // wait for commentary dismiss
+      }
     }
   }
 
