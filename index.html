@@ -341,19 +341,31 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
           <div class="comm-society" id="commSociety"></div>
         </div>
       </div>
-      <div class="comm-card-block" id="commCardBlock">
-        <div class="comm-card-icon" id="commCardIcon"></div>
-        <div class="comm-card-info">
-          <div class="comm-card-name" id="commCardName"></div>
-          <div class="comm-card-meta" id="commCardMeta"></div>
+      <!-- Opening brief (shown instead of card block at game start) -->
+      <div id="commOpening" style="display:none">
+        <div class="comm-target-lbl">Starting Position</div>
+        <div class="comm-target" id="commOpeningState"></div>
+        <div style="margin-top:.85rem">
+          <div class="comm-target-lbl">VP Objective</div>
+          <div class="comm-target" id="commOpeningVP"></div>
         </div>
       </div>
-      <div id="commTarget" style="display:none">
-        <div class="comm-target-lbl">Target State</div>
-        <div class="comm-target" id="commTargetBody"></div>
+      <!-- Card play (shown for normal plays) -->
+      <div id="commCardSection">
+        <div class="comm-card-block" id="commCardBlock">
+          <div class="comm-card-icon" id="commCardIcon"></div>
+          <div class="comm-card-info">
+            <div class="comm-card-name" id="commCardName"></div>
+            <div class="comm-card-meta" id="commCardMeta"></div>
+          </div>
+        </div>
+        <div id="commTarget" style="display:none;margin-top:.85rem">
+          <div class="comm-target-lbl">Target State</div>
+          <div class="comm-target" id="commTargetBody"></div>
+        </div>
       </div>
       <div>
-        <div class="comm-reasoning-lbl">Strategic Reasoning</div>
+        <div class="comm-reasoning-lbl" id="commReasoningLbl">Strategic Reasoning</div>
         <div class="comm-reasoning" id="commReasoning"></div>
       </div>
     </div>
@@ -835,7 +847,20 @@ function startGame() {
   logE(`Round 1 begins. ${cur().name} (${SOCIETIES[cur().soc].icon} ${SOCIETIES[cur().soc].name}) goes first.`);
   setPhase('draw');
   renderAll();
-  if (cur().isAI) setTimeout(aiTurn, gMode==='sim' ? SIM_DELAYS[simSpeed] : 700);
+
+  // In sim mode, show opening brief for each player before the first turn
+  if (gMode === 'sim') {
+    const showNextBrief = (idx) => {
+      if (idx >= G.players.length) {
+        setTimeout(aiTurn, SIM_DELAYS[simSpeed]);
+      } else {
+        showOpeningCommentary(G.players[idx], () => showNextBrief(idx + 1));
+      }
+    };
+    showNextBrief(0);
+  } else if (cur().isAI) {
+    setTimeout(aiTurn, 700);
+  }
 }
 
 function dealCard(p) {
@@ -1623,12 +1648,104 @@ function genReasoning(player, card, targetSid) {
     + `Current VP: <em>${myVP}</em>. Active agents: <em>${myAgents}</em>. Every play either scores VP, builds toward scoring, or denies the opponent.`;
 }
 
+function genOpeningReasoning(player) {
+  const soc = SOCIETIES[player.soc];
+  const start = getState(player.agents[0]);
+  const voice = SOC_VOICE[player.soc];
+  const opener = voice[Math.floor(Math.random()*voice.length)];
+  const alreadyScores = start && soc.vpCheck(start);
+  const boardQualifiers = G.states.filter(s => soc.vpCheck(s));
+
+  // Describe what the society needs
+  const needsMap = {
+    TCH: 'Republic governments with Secular culture and Patriotism',
+    THE: 'Dictatorships with Religious culture and Patriotism',
+    PLU: 'Capitalist economies with a Nuclear stockpile',
+    STR: 'Communist economies with Military of 3 or higher',
+    ANA: 'Provisional governments with any Patriotism',
+  };
+
+  // Early game priority advice per society
+  const priorityMap = {
+    TCH: 'Spread agents into republics, then use cultural cards to flip secular and build patriotism.',
+    THE: 'Target existing dictatorships first — Egypt and North Korea are natural footholds. Religious Revival cards are key.',
+    PLU: 'The USA and UK already qualify. Expand agents there immediately, then arm capitalist neighbours.',
+    STR: 'The Soviet Union and China are strong anchors. Push communist economics into adjacent states and build their militaries.',
+    ANA: 'Create provisional governments via Coups, Assassinations, and Revolutions — then move agents in. Chaos is your resource.',
+  };
+
+  const startLine = alreadyScores
+    ? `<em>${start?.name}</em> already satisfies our VP condition — an agent here scores immediately.`
+    : `<em>${start?.name}</em> does not yet score VP for us, but it is a superpower with strong adjacency to states that do.`;
+
+  const boardLine = boardQualifiers.length > 0
+    ? `On the current board, <em>${boardQualifiers.length} state${boardQualifiers.length!==1?'s':''}</em> qualify for our VP condition: ${boardQualifiers.slice(0,4).map(s=>`<em>${s.name}</em>`).join(', ')}${boardQualifiers.length>4?' and more':''}.`
+    : `No states on the current board yet satisfy our full VP condition — we will need to reshape them.`;
+
+  return `${opener}: we plant our first agent in <em>${start?.name}</em>. ${startLine} `
+    + `${boardLine} `
+    + `Remember — <em>we only score VP in states where our agent is present.</em> Getting agents onto qualifying states is the whole game. `
+    + `${priorityMap[player.soc]}`;
+}
+
+function showOpeningCommentary(player, onContinue) {
+  if (commSkipped || gMode !== 'sim') { onContinue(); return; }
+  const soc = SOCIETIES[player.soc];
+  const start = getState(player.agents[0]);
+  const GOV_ICONS_L = {republic:'🗳',monarchy:'👑',dictatorship:'✊',provisional:'⚡'};
+
+  // Band + avatar
+  document.getElementById('commBand').style.background = soc.color;
+  const av = document.getElementById('commAvatar');
+  av.textContent = soc.icon;
+  av.style.background = soc.color+'33';
+  av.style.borderColor = soc.color+'88';
+  document.getElementById('commName').textContent = player.name;
+  document.getElementById('commName').style.color = soc.color;
+  document.getElementById('commSociety').textContent = soc.name + '  ·  OPENING BRIEF';
+
+  // Show opening section, hide card section
+  document.getElementById('commOpening').style.display = '';
+  document.getElementById('commCardSection').style.display = 'none';
+  document.getElementById('commReasoningLbl').textContent = 'Strategy';
+
+  // Starting state block
+  document.getElementById('commOpeningState').innerHTML = start
+    ? `<b>${FLAGS[start.id]||'🏳'} ${start.name}</b> — our starting superpower<br>`
+      + `${GOV_ICONS_L[start.gov]||''} ${start.gov} &nbsp;·&nbsp; `
+      + `${start.econ==='capitalist'?'💹':'☭'} ${start.econ} &nbsp;·&nbsp; `
+      + `${start.cult==='secular'?'🔬':'✝'} ${start.cult}<br>`
+      + `⚔ Military ${start.military} &nbsp;·&nbsp; ☢ Nuclear ${start.nuclear} &nbsp;·&nbsp; ♥ Patriotism ${start.patriotism}`
+    : '—';
+
+  // VP objective block
+  document.getElementById('commOpeningVP').innerHTML =
+    `<b style="color:${soc.color}">${soc.icon} ${soc.name}</b><br>${soc.vpDesc}`;
+
+  // Reasoning
+  document.getElementById('commReasoning').innerHTML = genOpeningReasoning(player);
+
+  // Continue button
+  document.getElementById('commContinueBtn').style.background =
+    `linear-gradient(135deg,${soc.color},${soc.color}88)`;
+  document.getElementById('commContinueBtn').textContent = '▶ Begin';
+
+  commResumeCallback = onContinue;
+  document.getElementById('commOverlay').classList.add('show');
+}
+
 function showCommentary(player, card, targetSid, onContinue) {
   if (commSkipped || gMode !== 'sim') { onContinue(); return; }
   const soc = SOCIETIES[player.soc];
   const target = targetSid ? getState(targetSid) : null;
   const isPwr = !!card.power;
   const accentColor = isPwr ? '#ffd700' : soc.color;
+
+  // Restore card-play layout
+  document.getElementById('commOpening').style.display = 'none';
+  document.getElementById('commCardSection').style.display = '';
+  document.getElementById('commReasoningLbl').textContent = 'Strategic Reasoning';
+  document.getElementById('commContinueBtn').textContent = '▶ Continue';
 
   // Colour band at top
   document.getElementById('commBand').style.background =
