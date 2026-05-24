@@ -1835,32 +1835,87 @@ function aiTurn() {
     logE(`${p.name} discards <strong>${dropped.name}</strong> (hand limit).`);
   }
 
-  // Find best card to play that advances VP condition
+  // Build all viable (card, target) options and score each
   const playable = p.hand.map((c,i)=>({c,i})).filter(({c})=>p.ip>=c.cost);
   let played = false;
 
-  if (playable.length > 0) {
-    playable.sort((a,b)=>b.c.cost-a.c.cost);
-    const {c,i} = playable[0];
-
-    // Find a good target state
-    let targetSid = null;
+  // Returns candidate target states for a given card
+  function aiTargets(c) {
     if (c.power) {
-      const best = G.states.filter(s => !p.agents.includes(s.id) && !(c.soc==='THE' && s.sp))
-        .sort((a,b)=>((soc.vpCheck(b)?1:0)-(soc.vpCheck(a)?1:0)))[0];
-      if (best) targetSid = best.id;
-      else targetSid = G.states.filter(s=>!(c.soc==='THE'&&s.sp))[0]?.id;
-    } else if (c.needsAgent) {
-      const agentStates = G.states.filter(s=>p.agents.includes(s.id));
-      const notVP = agentStates.filter(s=>!soc.vpCheck(s));
-      if (notVP.length) targetSid = notVP[0].id;
-      else if (agentStates.length) targetSid = agentStates[0].id;
-    } else {
-      const adjStates = G.states.filter(s=>!p.agents.includes(s.id) && isAdjacentToAgent(s.id,p));
-      if (adjStates.length) targetSid = adjStates[0].id;
+      return G.states.filter(s => !p.agents.includes(s.id) && !(c.soc==='THE' && s.sp));
+    }
+    if (c.effect === 'recruit') {
+      return G.states.filter(s => !p.agents.includes(s.id) && isAdjacentToAgent(s.id, p));
+    }
+    if (c.effect === 'infiltrate') {
+      return G.states.filter(s => p.agents.includes(s.id)); // pick 'from' state
+    }
+    if (c.needsAgent) {
+      return G.states.filter(s => p.agents.includes(s.id));
+    }
+    return [null]; // no target needed
+  }
+
+  // Score a (card, target) pair — higher = better play
+  function aiScore(c, t) {
+    const tVP = t && soc.vpCheck(t);
+    const tMine = t && p.agents.includes(t.id);
+
+    // Power card: targets a qualifying state = massive value
+    if (c.power) return tVP ? 95 : 55;
+
+    // Recruit onto an already-qualifying state = instant VP, highest priority
+    if (c.effect === 'recruit') {
+      if (!t) return 0;
+      if (tVP) return 100;                         // immediate point!
+      if (p.agents.length <= 1) return 65;         // desperately need more agents
+      if (p.agents.length <= 3) return 40;         // still building network
+      return 20;
     }
 
-    if (targetSid || !c.needsAgent) {
+    // Simulate whether this card would flip the target into a VP state
+    if (tMine && t) {
+      const sim = {...t};
+      const ef = c.effect;
+      if (ef==='lobbying'||ef==='reform_gov') sim.gov='republic';
+      if (ef==='coup') { sim.gov='dictatorship'; sim.military=Math.min(10,sim.military+2); }
+      if (ef==='assassinate'||ef==='mutiny'||ef==='revolution') sim.gov='provisional';
+      if (ef==='set_religious'||ef==='revivalism') sim.cult='religious';
+      if (ef==='set_secular'||ef==='secularize') sim.cult='secular';
+      if (ef==='set_capitalist'||ef==='set_capitalist2'||ef==='free_trade'||ef==='privatize') sim.econ='capitalist';
+      if (ef==='set_communist'||ef==='nationalize') sim.econ='communist';
+      if (ef==='add_military'||ef==='arms_buildup') sim.military=Math.min(10,sim.military+3);
+      if (ef==='add_nuclear'||ef==='nuke_threat') sim.nuclear=Math.min(5,sim.nuclear+1);
+      if (ef==='build_nuclear'||ef==='build_nukes') sim.nuclear=Math.min(5,sim.nuclear+2);
+      if (ef==='add_patriotism'||ef==='propaganda') sim.patriotism=Math.min(5,sim.patriotism+3);
+      if (soc.vpCheck(sim) && !tVP) return 85;   // converts state to VP-scoring
+      if (soc.vpCheck(sim) && tVP)  return 25;   // already scores, mild value
+    }
+
+    // Sanctions: worth playing if opponent has an agent there
+    if (c.effect === 'sanctions') {
+      const opponentHere = G.players.some((op,i) => i!==G.players.indexOf(p) && t && op.agents.includes(t.id));
+      return opponentHere ? 50 : 5;
+    }
+
+    return c.cost * 4; // fallback: heavier cards slightly preferred
+  }
+
+  // Collect all options
+  const options = [];
+  for (const {c,i} of playable) {
+    const targets = aiTargets(c);
+    for (const t of targets) {
+      const sid = t ? t.id : null;
+      options.push({ c, i, targetSid: sid, score: aiScore(c, t) });
+    }
+  }
+  options.sort((a,b) => b.score - a.score);
+
+  if (options.length > 0) {
+    const {c, i, targetSid} = options[0];
+
+    if (targetSid !== undefined) {
       p.ip -= c.cost;
       p.hand.splice(i,1);
       p.discard.push(c);
