@@ -294,10 +294,42 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   </div>
 </div>
 
+<!-- ══════════ SETTINGS OVERLAY ══════════ -->
+<div id="settingsOverlay" style="display:none;position:fixed;inset:0;z-index:400;" onclick="onSettingsOverlayClick(event)">
+  <div id="settingsPanel" style="position:absolute;top:54px;right:16px;background:#18182a;border:1px solid #33334a;border-radius:12px;padding:20px 22px;box-shadow:0 12px 40px rgba(0,0,0,.7);min-width:230px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <span style="font-size:.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);">⚙ Settings</span>
+      <button onclick="toggleSettings()" style="background:transparent;border:none;color:var(--dim);font-size:1rem;cursor:pointer;padding:0 2px;line-height:1;">✕</button>
+    </div>
+    <div style="font-size:.78rem;margin-bottom:8px;color:#ccc;">Text Size</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button onclick="changeTextSize(-1)" style="width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:1.1rem;cursor:pointer;line-height:1;">−</button>
+      <div style="flex:1;text-align:center;">
+        <span id="textSizeLbl" style="font-size:.82rem;color:#fff;font-weight:bold;">Medium</span>
+        <div style="font-size:.62rem;color:var(--dim)" id="textSizePx">13px</div>
+      </div>
+      <button onclick="changeTextSize(1)"  style="width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:1.1rem;cursor:pointer;line-height:1;">+</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:12px;">
+      <button onclick="setTextSize(0)" style="flex:1;padding:5px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-size:.7rem;">S</button>
+      <button onclick="setTextSize(1)" style="flex:1;padding:5px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-size:.7rem;">M</button>
+      <button onclick="setTextSize(2)" style="flex:1;padding:5px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-size:.7rem;">L</button>
+      <button onclick="setTextSize(3)" style="flex:1;padding:5px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-size:.7rem;">XL</button>
+      <button onclick="setTextSize(4)" style="flex:1;padding:5px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-size:.7rem;">XXL</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════ SETUP ══════════ -->
 <div class="screen active" id="setup">
-  <div class="gtitle">Global Thermal Nuclear War</div>
-  <div class="gsub">"Would you like to play a game?"</div>
+  <div style="position:relative;">
+    <div class="gtitle">Global Thermal Nuclear War</div>
+    <div class="gsub">"Would you like to play a game?"</div>
+    <div style="position:absolute;top:0;right:0;display:flex;gap:6px;">
+      <button onclick="showRules()" style="background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--dim);font-size:1rem;cursor:pointer;padding:5px 9px;transition:all .13s;" data-tip="<b>📖 Rules</b>Open the rules reference.">📖</button>
+      <button onclick="toggleSettings()" id="settingsBtn" style="background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--dim);font-size:1rem;cursor:pointer;padding:5px 9px;transition:all .13s;" data-tip="<b>⚙ Settings</b>Adjust text size and display options.">⚙</button>
+    </div>
+  </div>
 
   <div class="sbox">
     <h3>Mode</h3>
@@ -419,26 +451,6 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
       <div class="ip-info" data-tip-key="ip">IP: <span class="ip-v" id="ipVal">0</span> <span style="font-size:.65rem;color:var(--dim)" id="ipIncome">(+0/turn)</span></div>
       <button class="ab" onclick="showRules()" style="margin-left:4px;font-size:.9rem;padding:4px 8px;" data-tip="<b>📖 Rules</b>Open the living rules reference — mechanics, societies, and card list.">📖</button>
       <button class="ab" id="settingsBtn" onclick="toggleSettings()" style="margin-left:4px;font-size:1rem;padding:4px 8px;" data-tip-key="btn-settings">⚙</button>
-    </div>
-    <!-- Settings panel -->
-    <div id="settingsPanel" style="display:none;position:absolute;top:44px;right:12px;z-index:300;background:#18182a;border:1px solid #33334a;border-radius:10px;padding:16px 20px;box-shadow:0 8px 32px rgba(0,0,0,.6);min-width:220px;">
-      <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:12px;">Settings</div>
-      <div style="font-size:.78rem;margin-bottom:8px;color:#ccc;">Text Size</div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <button onclick="changeTextSize(-1)" style="width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:1.1rem;cursor:pointer;line-height:1;">−</button>
-        <div style="flex:1;text-align:center;">
-          <span id="textSizeLbl" style="font-size:.82rem;color:#fff;font-weight:bold;">Medium</span>
-          <div style="font-size:.62rem;color:var(--dim)" id="textSizePx">13px</div>
-        </div>
-        <button onclick="changeTextSize(1)"  style="width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:1.1rem;cursor:pointer;line-height:1;">+</button>
-      </div>
-      <div style="display:flex;gap:6px;margin-top:12px;">
-        <button onclick="setTextSize(0)" style="flex:1;padding:5px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-size:.7rem;">S</button>
-        <button onclick="setTextSize(1)" style="flex:1;padding:5px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-size:.7rem;">M</button>
-        <button onclick="setTextSize(2)" style="flex:1;padding:5px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-size:.7rem;">L</button>
-        <button onclick="setTextSize(3)" style="flex:1;padding:5px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-size:.7rem;">XL</button>
-        <button onclick="setTextSize(4)" style="flex:1;padding:5px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-size:.7rem;">XXL</button>
-      </div>
     </div>
 
     <div class="board-wrap">
@@ -1866,8 +1878,11 @@ const TEXT_SIZES = [
 let currentSizeIdx = 1; // default Medium
 
 function toggleSettings() {
-  const p = document.getElementById('settingsPanel');
-  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+  const ov = document.getElementById('settingsOverlay');
+  ov.style.display = ov.style.display === 'none' ? 'block' : 'none';
+}
+function onSettingsOverlayClick(e) {
+  if (e.target === document.getElementById('settingsOverlay')) toggleSettings();
 }
 
 function applyTextSize(idx) {
@@ -1886,14 +1901,6 @@ function applyTextSize(idx) {
 function setTextSize(idx)     { applyTextSize(idx); }
 function changeTextSize(dir)  { applyTextSize(currentSizeIdx + dir); }
 
-// Close settings when clicking outside
-document.addEventListener('click', e => {
-  const panel = document.getElementById('settingsPanel');
-  const btn   = document.getElementById('settingsBtn');
-  if (panel && btn && !panel.contains(e.target) && e.target !== btn) {
-    panel.style.display = 'none';
-  }
-});
 
 // ── Init
 initSetup();
