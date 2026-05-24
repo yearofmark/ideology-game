@@ -6,8 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "if": "Bash(git commit*)",
-            "command": "cd /Users/markhebert/ideology-game && git push 2>&1 | tail -3",
+            "command": "jq -r '.tool_input.command' | grep -q 'git commit' && cd /Users/markhebert/ideology-game && git push 2>&1 | tail -3 || true",
             "statusMessage": "Pushing to GitHub...",
             "timeout": 30
           }
