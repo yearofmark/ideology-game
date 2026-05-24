@@ -211,6 +211,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .htab.hc.active{border-top-color:var(--cul);color:var(--cul);}
 .htab.he.active{border-top-color:var(--eco);color:var(--eco);}
 .htab.ha.active{border-top-color:#aaa;color:#ccc;}
+.htab.hpwr.active{border-top-color:#ffd700;color:#ffd700;}
 .hcards{display:flex;gap:8px;overflow-x:auto;padding-bottom:3px;min-height:145px;}
 
 /* ── CARDS ── */
@@ -223,6 +224,12 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .card.tc{border-top-color:var(--cul);}
 .card.te{border-top-color:var(--eco);}
 .card.ta{border-top-color:#888;}
+/* ── POWER CARD ── */
+.card.pwr{border-color:#b8860b;border-top-color:#ffd700;background:linear-gradient(160deg,#1a1608 0%,#181826 60%);box-shadow:0 0 10px rgba(255,215,0,.18);}
+.card.pwr:hover{box-shadow:0 0 22px rgba(255,215,0,.38);transform:translateY(-12px);}
+.card.pwr .ccost{color:#ffd700;}
+.card.pwr .ctlbl{color:#c8a600;}
+.pwr-crown{position:absolute;top:4px;left:5px;font-size:.68rem;}
 .ccost{position:absolute;top:5px;right:5px;font-size:.68rem;font-weight:bold;color:#f1c40f;}
 .ctlbl{font-size:.5rem;text-transform:uppercase;letter-spacing:1px;color:var(--dim);}
 .cname{font-size:.68rem;font-weight:bold;line-height:1.2;}
@@ -431,6 +438,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
           <button class="htab hm" id="htMil" onclick="setHandTab('military')" data-tip-key="tab-military">Military</button>
           <button class="htab hc" id="htCul" onclick="setHandTab('cultural')" data-tip-key="tab-cultural">Cultural</button>
           <button class="htab he" id="htEco" onclick="setHandTab('economic')" data-tip-key="tab-economic">Economic</button>
+          <button class="htab hpwr" id="htPwr" onclick="setHandTab('power')" data-tip="<b>👑 Power Cards</b>Your society's exclusive power card. One per deck — use it wisely.">👑</button>
         </div>
       </div>
       <div class="hcards" id="hCards"></div>
@@ -546,6 +554,23 @@ const CARD_POOL = [
   {id:'privatize',    name:'Privatization',     type:'economic',  cost:3, icon:'🏗',  desc:'Change state to Capitalist economy. +2 Resources.', effect:'set_capitalist2', needsAgent:true},
   {id:'sanctions',    name:'Sanctions',         type:'economic',  cost:2, icon:'🚫', desc:'Remove -2 Resources from a state. Opponent with agent there loses 2 IP.', effect:'sanctions', needsAgent:true},
   {id:'resource_dev', name:'Resource Dev.',     type:'economic',  cost:2, icon:'⛏',  desc:'Add +3 Resources to a state. Gain +2 IP.', effect:'resource_dev', needsAgent:true},
+
+  // ── POWER CARDS (society-specific · 1 copy · places agent)
+  {id:'pwr_tch', name:'Enlightenment Program', type:'power', cost:5, icon:'💡',
+    desc:'The scientific revolution arrives. Set any state to Republic + Secular culture. +2 Patriotism. Deploy your agent there.',
+    effect:'pwr_enlighten', needsAgent:false, power:true, soc:'TCH'},
+  {id:'pwr_the', name:'Divine Mandate',        type:'power', cost:5, icon:'📿',
+    desc:'God\'s will made law. Set any non-superpower state to Dictatorship + Religious culture. +2 Patriotism. Deploy your agent there.',
+    effect:'pwr_divine', needsAgent:false, power:true, soc:'THE'},
+  {id:'pwr_plu', name:'Secret Arms Deal',      type:'power', cost:5, icon:'💵',
+    desc:'Money talks. Set any state to Capitalist economy. Add +1 Nuclear stockpile. +2 Global Tension. Deploy your agent there.',
+    effect:'pwr_armsdeal', needsAgent:false, power:true, soc:'PLU'},
+  {id:'pwr_str', name:'Vanguard Forces',       type:'power', cost:5, icon:'⭐',
+    desc:'The people\'s army marches. Set any state to Communist economy. +4 Military. Deploy your agent there.',
+    effect:'pwr_vanguard', needsAgent:false, power:true, soc:'STR'},
+  {id:'pwr_ana', name:'Controlled Collapse',   type:'power', cost:5, icon:'💥',
+    desc:'Let it all burn down. Set any state to Provisional government. +3 Patriotism. +1 Global Tension. Deploy your agent there.',
+    effect:'pwr_collapse', needsAgent:false, power:true, soc:'ANA'},
 ];
 
 // ═══════════════════════════════════════════════════════
@@ -640,9 +665,16 @@ function renderSetupPlayers() {
 // ═══════════════════════════════════════════════════════
 //  GAME START
 // ═══════════════════════════════════════════════════════
-function buildDeck() {
+function buildDeck(soc) {
   const deck = [];
-  CARD_POOL.forEach(c => { deck.push({...c}); deck.push({...c}); });
+  CARD_POOL.forEach(c => {
+    if (c.power) {
+      // Power cards: only 1 copy, only for matching society
+      if (c.soc === soc) deck.push({...c});
+    } else {
+      deck.push({...c}); deck.push({...c}); // normal cards: 2 copies
+    }
+  });
   return shuffle(deck);
 }
 function shuffle(a) {
@@ -654,7 +686,7 @@ function shuffle(a) {
 function startGame() {
   const players = setupPlayers.map((p, i) => ({
     name: p.name, soc: p.soc, isAI: gMode==='solo' && i>0,
-    ip: 8, deck: buildDeck(), hand: [], discard: [],
+    ip: 8, deck: buildDeck(p.soc), hand: [], discard: [],
     agents: [p.sp], // stateIds where this player has agents
     startSP: p.sp,
   }));
@@ -777,21 +809,24 @@ function renderHand() {
   const p = cur();
   document.getElementById('handLbl').textContent = `${p.name}'s Hand (${p.hand.length})`;
   const container = document.getElementById('hCards');
-  const filtered = handTab==='all' ? p.hand : p.hand.filter(c=>c.type===handTab);
+  const filtered = handTab==='all' ? p.hand
+    : handTab==='power' ? p.hand.filter(c=>c.power)
+    : p.hand.filter(c=>c.type===handTab && !c.power);
   container.innerHTML = '';
   filtered.forEach((card, visIdx) => {
     const realIdx = p.hand.indexOf(card);
     const canAfford = p.ip >= card.cost;
     const div = document.createElement('div');
-    div.className = `card t${card.type[0]} ${!canAfford?'nope':''} ${G.selCardIdx===realIdx?'sel':''}`;
+    div.className = `card ${card.power?'pwr':'t'+card.type[0]} ${!canAfford?'nope':''} ${G.selCardIdx===realIdx?'sel':''}`;
     div.innerHTML = `
       <span class="ccost">${card.cost}💠</span>
-      <span class="ctlbl">${card.type}</span>
+      ${card.power ? '<span class="pwr-crown">👑</span>' : ''}
+      <span class="ctlbl">${card.power ? 'POWER' : card.type}</span>
       <span class="cname">${card.name}</span>
       <span class="cicon">${card.icon}</span>
       <span class="cdesc">${card.desc}</span>
     `;
-    div.dataset.tip = `<b>${card.name}</b>${card.cost} 💠 IP · ${card.type}<br>${card.desc}`;
+    div.dataset.tip = `<b>${card.name}</b>${card.cost} 💠 IP · ${card.power?'POWER CARD':card.type}<br>${card.desc}`;
     div.addEventListener('click', () => showCardPopup(card, realIdx));
     container.appendChild(div);
   });
@@ -875,11 +910,11 @@ function doDrawCard() {
 // ═══════════════════════════════════════════════════════
 function setHandTab(t) {
   handTab = t;
-  ['all','political','military','cultural','economic'].forEach(id => {
-    const el = document.getElementById('ht'+id.charAt(0).toUpperCase()+id.slice(1,3));
+  const tabMap = {all:'htAll', political:'htPol', military:'htMil', cultural:'htCul', economic:'htEco', power:'htPwr'};
+  Object.entries(tabMap).forEach(([id, elId]) => {
+    const el = document.getElementById(elId);
     if (el) el.classList.toggle('active', id===t);
   });
-  document.getElementById('htAll').classList.toggle('active', t==='all');
   renderHand();
 }
 
@@ -1152,6 +1187,52 @@ function applyEffect(effect, pIdx, sid) {
     case 'resource_dev':
       if (s) { s.resources=Math.min(5,s.resources+3); p.ip+=2; }
       break;
+
+    // ── POWER CARD EFFECTS (place agent + reshape state)
+    case 'pwr_enlighten':
+      if (s) {
+        s.gov='republic'; s.entGov=0;
+        s.cult='secular'; s.entCult=0;
+        s.patriotism=Math.min(5,s.patriotism+2);
+        if (!p.agents.includes(sid)) p.agents.push(sid);
+        logE(`✨ ${p.name}'s Enlightenment Program transforms ${s.name} — Republic, Secular, agent deployed.`);
+      }
+      break;
+    case 'pwr_divine':
+      if (s && !s.sp) {
+        s.gov='dictatorship'; s.entGov=0;
+        s.cult='religious'; s.entCult=0;
+        s.patriotism=Math.min(5,s.patriotism+2);
+        if (!p.agents.includes(sid)) p.agents.push(sid);
+        logE(`📿 ${p.name}'s Divine Mandate reshapes ${s.name} — Dictatorship, Religious, agent deployed.`);
+      } else if (s?.sp) { notify('Divine Mandate cannot target a Superpower.'); }
+      break;
+    case 'pwr_armsdeal':
+      if (s) {
+        s.econ='capitalist'; s.entEcon=0;
+        s.nuclear=Math.min(5,s.nuclear+1);
+        addTension(2);
+        if (!p.agents.includes(sid)) p.agents.push(sid);
+        logE(`💵 ${p.name}'s Secret Arms Deal transforms ${s.name} — Capitalist, +1 Nuclear, agent deployed.`);
+      }
+      break;
+    case 'pwr_vanguard':
+      if (s) {
+        s.econ='communist'; s.entEcon=0;
+        s.military=Math.min(10,s.military+4);
+        if (!p.agents.includes(sid)) p.agents.push(sid);
+        logE(`⭐ ${p.name}'s Vanguard Forces take ${s.name} — Communist, +4 Military, agent deployed.`);
+      }
+      break;
+    case 'pwr_collapse':
+      if (s) {
+        s.gov='provisional'; s.entGov=0;
+        s.patriotism=Math.min(5,s.patriotism+3);
+        addTension(1);
+        if (!p.agents.includes(sid)) p.agents.push(sid);
+        logE(`💥 ${p.name}'s Controlled Collapse destabilises ${s.name} — Provisional, +3 Patriotism, agent deployed.`);
+      }
+      break;
   }
 }
 
@@ -1261,7 +1342,14 @@ function aiTurn() {
 
     // Find a good target state
     let targetSid = null;
-    if (c.needsAgent) {
+    if (c.power) {
+      // Power card: target the best state globally that, after the power effect, would score VP
+      // Prefer states not already owned, that would qualify after transformation
+      const best = G.states.filter(s => !p.agents.includes(s.id) && !(c.soc==='THE' && s.sp))
+        .sort((a,b)=>((soc.vpCheck(b)?1:0)-(soc.vpCheck(a)?1:0)))[0];
+      if (best) targetSid = best.id;
+      else targetSid = G.states.filter(s=>!(c.soc==='THE'&&s.sp))[0]?.id;
+    } else if (c.needsAgent) {
       const agentStates = G.states.filter(s=>p.agents.includes(s.id));
       // Prefer states that, when modified, satisfy our VP condition
       const notVP = agentStates.filter(s=>!soc.vpCheck(s));
@@ -1409,18 +1497,23 @@ function showStatePopup(sid) {
 }
 
 function showCardPopup(card, idx) {
-  const tc = TYPE_COLORS[card.type] || '#aaa';
+  const isPwr = !!card.power;
+  const tc = isPwr ? '#ffd700' : (TYPE_COLORS[card.type] || '#aaa');
   const p = cur();
   const canAfford = p.ip >= card.cost;
   const hasAgents = p.agents.length > 0;
+  const pwrBorder = isPwr ? 'border:1px solid #b8860b;background:linear-gradient(160deg,#1a1608,#18182a);' : '';
   document.getElementById('popupContent').innerHTML = `
-    <div class="popup-card-type" style="color:${tc}">${card.type.toUpperCase()}</div>
-    <div class="popup-title">${card.name}</div>
+    ${isPwr ? `<div style="font-size:.6rem;letter-spacing:2px;color:#ffd700;margin-bottom:4px">👑 POWER CARD · SOCIETY EXCLUSIVE · 1 PER DECK</div>` : ''}
+    <div class="popup-card-type" style="color:${tc}">${isPwr ? 'POWER' : card.type.toUpperCase()}</div>
+    <div class="popup-title" style="${isPwr?'color:#ffd700':''}">${card.name}</div>
     <div class="popup-card-icon">${card.icon}</div>
-    <span class="popup-card-cost">${card.cost} 💠 IP</span>
+    <span class="popup-card-cost" style="${isPwr?'background:rgba(255,215,0,.12);color:#ffd700;border-color:rgba(255,215,0,.3)':''}">${card.cost} 💠 IP</span>
     <div class="popup-card-desc">${card.desc}</div>
-    ${card.needsAgent ? '<div class="popup-card-note">⚠ Requires your Agent on the target state</div>' : ''}
-    <button class="popup-play-btn" style="background:linear-gradient(135deg,${tc},${tc}99)"
+    ${isPwr
+      ? `<div class="popup-card-note" style="color:#ffd700;background:rgba(255,215,0,.07);border-color:rgba(255,215,0,.25)">⭐ Deploys your agent on the target state. No existing agent required.</div>`
+      : card.needsAgent ? '<div class="popup-card-note">⚠ Requires your Agent on the target state</div>' : ''}
+    <button class="popup-play-btn" style="background:${isPwr?'linear-gradient(135deg,#b8860b,#8b6914)':'linear-gradient(135deg,'+tc+','+tc+'99)'}"
       ${canAfford ? '' : 'disabled style="opacity:.4;cursor:not-allowed"'}
       onclick="selectCardFromPopup(${idx})">
       ${canAfford ? 'Select to Play' : 'Not Enough IP'}
