@@ -353,13 +353,26 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .comm-opt.best .comm-opt-score{color:#f1c40f;}
 .comm-opt-empty{font-size:.78rem;color:var(--dim);padding:.5rem 0;}
 /* ── BOARD PICK MODE ── */
-#boardPickBanner{display:none;background:#0d0d22;border-bottom:2px solid #1e1e40;padding:.7rem 1.1rem .65rem;flex-shrink:0;}
-#boardPickBanner.active{display:flex;align-items:center;gap:.9rem;}
-.bpb-badge{font-size:1.8rem;line-height:1;flex-shrink:0;}
-.bpb-info{flex:1;min-width:0;}
-.bpb-title{font-size:.88rem;font-weight:900;color:#fff;}
-.bpb-sub{font-size:.63rem;color:var(--dim);margin-top:.15rem;}
-.bpb-progress{font-size:.58rem;color:#3a3a65;letter-spacing:1.5px;text-transform:uppercase;flex-shrink:0;}
+/* ── BOARD PICK POPUP ── */
+#bpickOverlay{position:fixed;bottom:1.4rem;right:1.4rem;z-index:500;display:none;pointer-events:none;}
+#bpickOverlay.show{display:block;}
+.bpick-box{pointer-events:auto;background:#12122a;border:1px solid #2a2a4a;border-radius:1rem;width:295px;overflow:hidden;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.65);}
+.bpick-min-btn{position:absolute;top:.6rem;right:.75rem;background:transparent;border:none;color:var(--dim);font-size:1.1rem;cursor:pointer;line-height:1;padding:0;}
+.bpick-pill{display:none;align-items:center;gap:.6rem;padding:.55rem .9rem .55rem .75rem;}
+.bpick-pill-icon{width:1.9rem;height:1.9rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0;border:2px solid rgba(255,255,255,.18);}
+.bpick-pill-name{font-size:.72rem;font-weight:900;color:#fff;white-space:nowrap;}
+.bpick-pill-sub{font-size:.55rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);white-space:nowrap;}
+.bpick-pill-btn{margin-left:.3rem;padding:.3rem .75rem;border-radius:1rem;border:none;background:rgba(255,255,255,.1);color:#fff;font-size:.68rem;font-weight:700;cursor:pointer;}
+.bpick-band{height:3px;}
+.bpick-body{padding:1rem 1.15rem .9rem;}
+.bpick-header{display:flex;align-items:center;gap:.75rem;margin-bottom:.7rem;}
+.bpick-avatar{width:2.4rem;height:2.4rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
+.bpick-pname{font-size:.88rem;font-weight:900;color:#fff;}
+.bpick-soc{font-size:.6rem;text-transform:uppercase;letter-spacing:1.3px;color:var(--dim);margin-top:.1rem;}
+.bpick-inst{font-size:.71rem;color:#b0b0cc;line-height:1.55;margin-bottom:.6rem;}
+.bpick-prog{font-size:.57rem;text-transform:uppercase;letter-spacing:1.5px;color:#393960;}
+#bpickOverlay.minimized .bpick-band,#bpickOverlay.minimized .bpick-body,#bpickOverlay.minimized .bpick-min-btn{display:none !important;}
+#bpickOverlay.minimized .bpick-pill{display:flex;}
 .sp-fit-badge{font-size:.48rem;font-weight:900;letter-spacing:.8px;padding:1px 6px;border-radius:6px;pointer-events:none;display:inline-block;width:fit-content;}
 .sp-fit-ideal {background:rgba(39,174,96,.2); color:#2ecc71;border:1px solid #27ae60;}
 .sp-fit-strong{background:rgba(41,128,185,.2);color:#5dade2;border:1px solid #2980b9;}
@@ -472,6 +485,33 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   </div>
 </div>
 
+<!-- ══════════ BOARD PICK POPUP ══════════ -->
+<div id="bpickOverlay">
+  <div class="bpick-box">
+    <button class="bpick-min-btn" onclick="minimizeBoardPick()" title="Minimize — click any highlighted state to pick">⊟</button>
+    <div class="bpick-pill" id="bpickPill">
+      <div class="bpick-pill-icon" id="bpickPillIcon"></div>
+      <div class="bpick-pill-info">
+        <div class="bpick-pill-name" id="bpickPillName"></div>
+        <div class="bpick-pill-sub">Choose starting position</div>
+      </div>
+      <button class="bpick-pill-btn" onclick="restoreBoardPick()">▶ Pick</button>
+    </div>
+    <div class="bpick-band" id="bpickBand"></div>
+    <div class="bpick-body">
+      <div class="bpick-header">
+        <div class="bpick-avatar" id="bpickAvatar"></div>
+        <div>
+          <div class="bpick-pname" id="bpickPName"></div>
+          <div class="bpick-soc"   id="bpickSocLbl"></div>
+        </div>
+      </div>
+      <div class="bpick-inst" id="bpickInst"></div>
+      <div class="bpick-prog" id="bpickProg"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════ SETTINGS OVERLAY ══════════ -->
 <div id="settingsOverlay" style="display:none;position:fixed;inset:0;z-index:400;" onclick="onSettingsOverlayClick(event)">
   <div id="settingsPanel" style="position:absolute;top:54px;right:16px;background:#18182a;border:1px solid #33334a;border-radius:12px;padding:20px 22px;box-shadow:0 12px 40px rgba(0,0,0,.7);min-width:230px;">
@@ -553,15 +593,6 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
       <button class="sim-spd-btn" onclick="setSimSpeed('turbo')">🚀 Turbo</button>
     </div>
     <button class="sim-pause" id="simPauseBtn" onclick="toggleSimPause()">⏸ Pause</button>
-  </div>
-  <!-- ── BOARD PICK BANNER ── -->
-  <div id="boardPickBanner">
-    <div class="bpb-badge" id="bpbBadge"></div>
-    <div class="bpb-info">
-      <div class="bpb-title" id="bpbTitle"></div>
-      <div class="bpb-sub"  id="bpbSub"></div>
-    </div>
-    <div class="bpb-progress" id="bpbProgress"></div>
   </div>
   <div style="display:flex;flex:1;overflow:hidden;">
   <div class="sidebar">
@@ -1055,25 +1086,48 @@ function enterBoardPickMode(humanPlayers, takenIds, onDone) {
   boardPickTaken   = takenIds.slice();
   boardPickDone    = onDone;
   document.getElementById('game').classList.add('board-picking');
-  updateBoardPickBanner();
+  document.getElementById('bpickOverlay').classList.remove('minimized');
+  updateBoardPickPopup();
   renderBoard();
 }
 
-function updateBoardPickBanner() {
+function updateBoardPickPopup() {
   const p   = boardPickPlayers[boardPickIdx];
   const soc = SOCIETIES[p.soc];
   const isAna = p.soc === 'ANA';
-  document.getElementById('bpbBadge').textContent    = soc.icon;
-  document.getElementById('bpbBadge').style.color    = soc.color;
-  document.getElementById('bpbTitle').innerHTML      =
-    `<span style="color:${soc.color}">${p.name} (${soc.name})</span> — Choose your starting position`;
-  document.getElementById('bpbSub').textContent      = isAna
-    ? 'Anarchists cannot start in or adjacent to a superpower. Click a highlighted state.'
-    : 'Click a highlighted superpower to claim it as your starting position.';
+  // Color band
+  document.getElementById('bpickBand').style.background = soc.color;
+  // Avatar
+  const av = document.getElementById('bpickAvatar');
+  av.textContent = soc.icon;
+  av.style.background = soc.color + '33';
+  av.style.borderColor = soc.color;
+  // Text
+  document.getElementById('bpickPName').textContent  = p.name;
+  document.getElementById('bpickSocLbl').textContent = soc.name.toUpperCase();
+  document.getElementById('bpickSocLbl').style.color = soc.color;
+  document.getElementById('bpickInst').textContent   = isAna
+    ? 'Anarchists cannot start in a superpower or any country bordering one. Click a highlighted state on the board.'
+    : 'Click a highlighted superpower on the board to claim it as your starting position.';
   const total = boardPickPlayers.length;
-  document.getElementById('bpbProgress').textContent =
-    total > 1 ? `${boardPickIdx + 1} / ${total} players` : '';
-  document.getElementById('boardPickBanner').classList.add('active');
+  document.getElementById('bpickProg').textContent =
+    total > 1 ? `Player ${boardPickIdx + 1} of ${total}` : '';
+  // Sync pill
+  document.getElementById('bpickPillIcon').textContent    = soc.icon;
+  document.getElementById('bpickPillIcon').style.background = soc.color + '33';
+  document.getElementById('bpickPillIcon').style.borderColor = soc.color;
+  document.getElementById('bpickPillName').textContent    = p.name;
+  document.getElementById('bpickPillName').style.color    = soc.color;
+  // Show popup
+  document.getElementById('bpickOverlay').classList.add('show');
+}
+
+function minimizeBoardPick() {
+  document.getElementById('bpickOverlay').classList.add('minimized');
+}
+
+function restoreBoardPick() {
+  document.getElementById('bpickOverlay').classList.remove('minimized');
 }
 
 function onBoardPick(sid) {
@@ -1088,11 +1142,13 @@ function onBoardPick(sid) {
   if (boardPickIdx >= boardPickPlayers.length) {
     // All human players picked — clean up and continue
     boardPickActive = false;
-    document.getElementById('boardPickBanner').classList.remove('active');
+    document.getElementById('bpickOverlay').classList.remove('show');
+    document.getElementById('bpickOverlay').classList.remove('minimized');
     document.getElementById('game').classList.remove('board-picking');
     if (boardPickDone) { const fn = boardPickDone; boardPickDone = null; fn(); }
   } else {
-    updateBoardPickBanner();
+    document.getElementById('bpickOverlay').classList.remove('minimized');
+    updateBoardPickPopup();
     renderBoard();
   }
 }
@@ -2829,7 +2885,8 @@ function showScreen(id) {
 
 function resetGame() {
   boardPickActive = false;
-  document.getElementById('boardPickBanner').classList.remove('active');
+  document.getElementById('bpickOverlay').classList.remove('show');
+  document.getElementById('bpickOverlay').classList.remove('minimized');
   document.getElementById('game').classList.remove('board-picking');
   showScreen('setup');
 }
