@@ -285,7 +285,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .comm-name{font-size:1.05rem;font-weight:900;letter-spacing:.3px;}
 .comm-society{font-size:.68rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--dim);margin-top:2px;}
 /* card played block */
-.comm-card-block{display:flex;align-items:center;gap:.9rem;background:rgba(255,255,255,.04);border:1px solid #2e2e50;border-radius:.7rem;padding:.8rem 1rem;}
+.comm-card-block{display:flex;align-items:center;gap:.9rem;background:rgba(255,255,255,.04);border:1px solid #2e2e50;border-radius:.7rem;padding:.8rem 1rem;cursor:help;transition:background .15s;}
+.comm-card-block:hover{background:rgba(255,255,255,.08);}
 .comm-card-icon{font-size:1.8rem;flex-shrink:0;}
 .comm-card-info{}
 .comm-card-name{font-size:.95rem;font-weight:900;margin-bottom:2px;}
@@ -1653,6 +1654,8 @@ function showCommentary(player, card, targetSid, onContinue) {
     `${card.cost} 💠 IP  ·  ${isPwr ? 'Society exclusive · 1 per deck' : card.type}`;
   document.getElementById('commCardBlock').style.borderColor =
     isPwr ? 'rgba(255,215,0,.3)' : '#2e2e50';
+  document.getElementById('commCardBlock').dataset.tip =
+    `<b>${card.icon} ${card.name}</b>${card.desc}${card.needsAgent ? '<br><em style="color:#f39c12">⚠ Requires agent on target</em>' : ''}${isPwr ? '<br><em style="color:#ffd700">👑 Deploys agent · no prior presence needed</em>' : ''}`;
 
   // Target state
   const tWrap = document.getElementById('commTarget');
