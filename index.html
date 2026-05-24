@@ -175,12 +175,16 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .world-grid{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);gap:6px;position:absolute;inset:12px;}
 
 /* ── STATE TILES ── */
-.st{border-radius:7px;border:2px solid var(--border);padding:6px;cursor:pointer;transition:all .14s;position:relative;display:flex;flex-direction:column;gap:3px;user-select:none;}
+.st{border-radius:7px;border:2px solid var(--border);padding:6px;cursor:pointer;transition:all .14s;position:relative;display:flex;flex-direction:column;gap:3px;user-select:none;overflow:visible;}
 .st:hover{transform:scale(1.03);z-index:15;}
 .st.superpower{border-width:2px;}
 .st.gov-provisional{border-style:dashed;}
 .st.valid-target{box-shadow:0 0 0 2px rgba(255,255,255,.9);animation:tpulse .7s infinite alternate;z-index:5;}
 @keyframes tpulse{from{box-shadow:0 0 0 2px rgba(255,255,255,.4);}to{box-shadow:0 0 0 3px #fff;}}
+/* ── DELTA CHIPS ── */
+@keyframes chipFloat{0%{opacity:0;transform:translateX(-50%) translateY(0) scale(.8);}15%{opacity:1;transform:translateX(-50%) translateY(-6px) scale(1);}80%{opacity:1;transform:translateX(-50%) translateY(-30px);}100%{opacity:0;transform:translateX(-50%) translateY(-42px);}}
+.delta-chip{position:absolute;z-index:180;font-size:.62rem;font-weight:900;padding:2px 7px;border-radius:10px;pointer-events:none;white-space:nowrap;left:50%;animation:chipFloat 2.2s ease-out forwards;box-shadow:0 2px 8px rgba(0,0,0,.7);}
+.dpos{background:#27ae60;color:#fff;}.dneg{background:#c0392b;color:#fff;}.dgov{background:#2980b9;color:#fff;}.deco{background:#c49b00;color:#fff;}.dcul{background:#8e44ad;color:#fff;}
 .st-head{display:flex;align-items:flex-start;gap:4px;}
 .st-banner{margin:-6px -6px 4px -6px;padding:5px 8px;background:rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.08);border-radius:5px 5px 0 0;display:flex;align-items:center;gap:6px;}
 .st-flag-lg{font-size:1.6rem;line-height:1;flex-shrink:0;}
@@ -1278,6 +1282,46 @@ function getFlipInfo(card, sid) {
   return { extra: level, blocked, attr, level };
 }
 
+// ── State-change delta chips ──────────────────────────
+function snapshotStates() {
+  return G.states.map(s => ({...s}));
+}
+
+function showStateDeltas(before) {
+  // Build list of (state, deltas) pairs
+  const changed = [];
+  before.forEach(b => {
+    const s = G.states.find(st => st.id === b.id);
+    if (!s) return;
+    const deltas = [];
+    if (s.gov  !== b.gov)  deltas.push({text:`→ ${s.gov.charAt(0).toUpperCase()+s.gov.slice(1)}`, cls:'dgov'});
+    if (s.econ !== b.econ) deltas.push({text:`→ ${s.econ==='capitalist'?'Capitalist':'Communist'}`, cls:'deco'});
+    if (s.cult !== b.cult) deltas.push({text:`→ ${s.cult==='secular'?'Secular':'Religious'}`, cls:'dcul'});
+    [{key:'military',icon:'⚔'},{key:'nuclear',icon:'☢'},{key:'patriotism',icon:'♥'},{key:'resources',icon:'💎'}]
+      .forEach(({key,icon}) => {
+        const d = (s[key]||0) - (b[key]||0);
+        if (d) deltas.push({text:`${d>0?'+':''}${d}${icon}`, cls: d>0?'dpos':'dneg'});
+      });
+    if (deltas.length) changed.push({sid: s.id, deltas});
+  });
+  if (!changed.length) return;
+  const spread = changed.length > 2; // global event — stagger per state
+  changed.forEach(({sid, deltas}, si) => {
+    const el = document.querySelector(`.st[data-sid="${sid}"]`);
+    if (!el) return;
+    const stateOffset = spread ? si * 0.05 : 0;
+    deltas.forEach((d, di) => {
+      const chip = document.createElement('div');
+      chip.className = `delta-chip ${d.cls}`;
+      chip.textContent = d.text;
+      chip.style.top = `${22 + di * 22}px`;
+      chip.style.animationDelay = `${stateOffset + di * 0.12}s`;
+      el.appendChild(chip);
+      chip.addEventListener('animationend', () => chip.remove());
+    });
+  });
+}
+
 function doPlayCard(targetSid) {
   if (!G.selCard) return;
   const p = cur();
@@ -1294,6 +1338,7 @@ function doPlayCard(targetSid) {
   p.discard.push(card);
 
   const state = targetSid ? getState(targetSid) : null;
+  const beforeStates = snapshotStates();
   applyEffect(card.effect, G.players.indexOf(p), targetSid);
 
   logE(`${p.name} plays <strong>${card.name}</strong>${state ? ' on '+state.name : ''}.`);
@@ -1303,6 +1348,7 @@ function doPlayCard(targetSid) {
   document.getElementById('bPlay').disabled = true;
   document.getElementById('bCancel').style.display = 'none';
   renderAll();
+  showStateDeltas(beforeStates);
   checkEndConditions();
 }
 
@@ -2051,9 +2097,11 @@ function aiTurn() {
       p.hand.splice(i,1);
       p.discard.push(c);
       if (c.effect==='infiltrate') G.infiltrateFrom = p.agents[0];
+      const aiBeforeStates = snapshotStates();
       applyEffect(c.effect, G.players.indexOf(p), targetSid);
       logE(`${p.name} (AI) plays <strong>${c.name}</strong>${targetSid?' on '+getState(targetSid).name:''}.`);
       renderAll();
+      showStateDeltas(aiBeforeStates);
       played = true;
 
       if (gMode === 'sim') {
