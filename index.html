@@ -1100,9 +1100,8 @@ function isSpAdjacentStatic(sid) {
 function validPickStates(player) {
   return INIT_STATES.filter(s => {
     if (boardPickTaken.includes(s.id)) return false;
-    if (s.sp) return false; // no society starts in a superpower
-    if (player.soc === 'ANA') return !isSpAdjacentStatic(s.id);
-    return true;
+    if (player.soc === 'ANA') return !s.sp && !isSpAdjacentStatic(s.id);
+    return !!s.sp; // non-ANA: superpowers only
   });
 }
 
@@ -1135,7 +1134,7 @@ function updateBoardPickPopup() {
   document.getElementById('bpickSocLbl').style.color = soc.color;
   document.getElementById('bpickInst').textContent   = isAna
     ? 'Anarchists cannot start in a superpower or any country bordering one. Click a highlighted state on the board.'
-    : 'Click any highlighted state on the board to claim your starting position.';
+    : 'Click a highlighted superpower on the board to claim it as your starting position.';
   const total = boardPickPlayers.length;
   document.getElementById('bpickProg').textContent =
     total > 1 ? `Player ${boardPickIdx + 1} of ${total}` : '';
@@ -1181,19 +1180,23 @@ function onBoardPick(sid) {
 }
 
 function autoAssignSP(players, taken) {
-  // Silently assign the best available non-superpower starting state for each player.
-  // Scores each candidate by: +10 if it already satisfies the society's VP condition,
-  // +resources as tiebreaker. ANA additionally excludes SP-adjacent states.
+  // Silently assign the best available starting state for each player.
+  // Non-ANA: pick best-fit superpower. ANA: pick best non-SP non-adjacent state.
+  const order = ['ideal','strong','fair','weak'];
+  const sps   = INIT_STATES.filter(s => s.sp);
   players.forEach(p => {
-    let pool = INIT_STATES.filter(s => !s.sp && !taken.includes(s.id));
-    if (p.soc === 'ANA') pool = pool.filter(s => !isSpAdjacentStatic(s.id));
-    const soc = SOCIETIES[p.soc];
-    pool.sort((a, b) => {
-      const va = (soc.vpCheck(a) ? 10 : 0) + a.resources;
-      const vb = (soc.vpCheck(b) ? 10 : 0) + b.resources;
-      return vb - va;
-    });
-    const best = pool[0];
+    let best = null;
+    if (p.soc === 'ANA') {
+      const pool = ANA_STARTS.map(a => INIT_STATES.find(s => s.id === a.id));
+      best = pool.find(s => s && !taken.includes(s.id));
+    } else {
+      const fit = SP_FIT[p.soc];
+      for (const rating of order) {
+        best = sps.find(s => fit[s.id].rating === rating && !taken.includes(s.id));
+        if (best) break;
+      }
+      if (!best) best = sps.find(s => !taken.includes(s.id));
+    }
     if (!best) return;
     p.agents  = [best.id];
     p.startSP = best.id;
@@ -1364,11 +1367,12 @@ function renderBoard() {
     let pickBadge = '';
     if (boardPickActive && pickClass === 'pick-valid') {
       const picker = boardPickPlayers[boardPickIdx];
-      const soc = SOCIETIES[picker.soc];
-      const isVpMatch = soc.vpCheck(s);
-      pickBadge = isVpMatch
-        ? `<div class="pick-overlay-badge sp-fit-badge sp-fit-ideal">⭐ VP MATCH</div>`
-        : `<div class="pick-overlay-badge sp-fit-badge sp-fit-fair">${soc.icon} START</div>`;
+      if (picker.soc === 'ANA') {
+        pickBadge = `<div class="pick-overlay-badge sp-fit-badge sp-fit-fair">🏴 START</div>`;
+      } else if (s.sp && SP_FIT[picker.soc]?.[s.id]) {
+        const f = SP_FIT[picker.soc][s.id];
+        pickBadge = `<div class="pick-overlay-badge sp-fit-badge sp-fit-${f.rating}">${f.icon} ${f.label}</div>`;
+      }
     }
 
     div.innerHTML = `
