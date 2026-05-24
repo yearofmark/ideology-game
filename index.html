@@ -1161,8 +1161,10 @@ function onBoardPick(sid) {
   const p     = boardPickPlayers[boardPickIdx];
   const valid = validPickStates(p);
   if (!valid.find(s => s.id === sid)) return; // invalid — ignore click
-  p.startSP = sid;
-  p.agents  = [sid];
+  p.startSP  = sid;
+  p.agents   = [sid];
+  p.vpScore  = calcVP(p); // show VP immediately after this player picks
+  renderVP();
   boardPickTaken.push(sid);
   boardPickIdx++;
   if (boardPickIdx >= boardPickPlayers.length) {
