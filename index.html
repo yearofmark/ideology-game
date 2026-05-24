@@ -919,7 +919,7 @@ function setThresh(v) {
 }
 
 function addPlayer() {
-  if (setupPlayers.length >= 5) return;
+  if (setupPlayers.length >= 4) return;
   const ids = Object.keys(SOCIETIES);
   const used = setupPlayers.map(p=>p.soc);
   const next = ids.find(id=>!used.includes(id)) || ids[0];
@@ -948,6 +948,10 @@ function renderSetupPlayers() {
       ${i>=2?`<button class="rm-btn" onclick="removePlayer(${i})">✕</button>`:''}
     </div>`;
   }).join('');
+
+  // hide Add Player button at 4 players or in solo/sim mode
+  const addBtn = document.getElementById('addPBtn');
+  if (addBtn) addBtn.style.display = (gMode==='solo' || gMode==='sim' || setupPlayers.length >= 4) ? 'none' : '';
 
   // update society buttons highlighting
   document.querySelectorAll('#socGrid .soc-btn').forEach(btn => {
