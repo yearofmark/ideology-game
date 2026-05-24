@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Global Thermo-Nuclear Warfare</title>
+<style>
+:root {
+  --bg:#0c0c12; --panel:#141420; --border:#22223a; --text:#ddd; --dim:#666;
+  --tch:#3498db; --the:#9b59b6; --plu:#f39c12; --str:#e74c3c; --ana:#1abc9c;
+  --pol:#4a90d9; --mil:#e74c3c; --cul:#f1c40f; --eco:#2ecc71;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;overflow:hidden;height:100vh;}
+.screen{display:none;width:100vw;height:100vh;}
+.screen.active{display:flex;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+::-webkit-scrollbar-track{background:transparent;}
+*{scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+/* ── TOOLTIP ── */
+#tt{position:fixed;background:#13131f;border:1px solid #33334a;border-radius:8px;padding:9px 13px;font-size:.72rem;max-width:260px;line-height:1.6;pointer-events:none;z-index:600;display:none;color:#ccc;box-shadow:0 10px 30px rgba(0,0,0,.6);}
+#tt b{color:#fff;display:block;margin-bottom:2px;}
+#tt em{color:#f39c12;font-style:normal;}
+
+/* ── POPUP ── */
+/* ── LEGEND ── */
+.legend-section-lbl{font-size:.58rem;text-transform:uppercase;letter-spacing:1.5px;color:#555;margin-bottom:4px;padding-bottom:3px;border-bottom:1px solid var(--border);}
+.legend-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px;}
+.legend-item{display:flex;align-items:center;gap:5px;padding:3px 4px;border-radius:5px;cursor:default;transition:background .12s;}
+.legend-item:hover{background:rgba(255,255,255,.05);}
+.legend-icon{font-size:.9rem;width:18px;text-align:center;flex-shrink:0;}
+.legend-name{font-size:.68rem;color:var(--text);}
+.legend-note{font-size:.55rem;color:var(--dim);margin-left:auto;}
+.legend-tag{font-size:.58rem;padding:2px 5px;border-radius:2px;font-weight:bold;flex-shrink:0;}
+
+.popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:none;align-items:center;justify-content:center;}
+.popup-overlay.show{display:flex;}
+.popup-box{background:#18182a;border:1px solid #33334a;border-radius:1rem;padding:1.8rem 1.8rem 1.4rem;min-width:22rem;max-width:32rem;position:relative;box-shadow:0 1.5rem 3.75rem rgba(0,0,0,.6);}
+.popup-close{position:absolute;top:.75rem;right:.9rem;background:transparent;border:none;color:var(--dim);font-size:1.1rem;cursor:pointer;line-height:1;padding:.25rem .4rem;border-radius:.25rem;}
+.popup-close:hover{color:var(--text);background:rgba(255,255,255,.07);}
+.popup-title{font-size:1.15rem;font-weight:900;letter-spacing:.5px;margin-bottom:4px;}
+.popup-sub{font-size:.72rem;color:var(--dim);margin-bottom:1rem;letter-spacing:1px;}
+.popup-attrs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:1rem;}
+.popup-attr{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:.45rem;padding:.5rem .65rem;}
+.popup-attr-lbl{font-size:.55rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:.25rem;}
+.popup-attr-val{font-size:.82rem;font-weight:bold;}
+.popup-stats{display:flex;flex-direction:column;gap:.45rem;margin-bottom:1rem;}
+.popup-stat-row{display:flex;align-items:center;gap:.65rem;}
+.popup-stat-lbl{font-size:.7rem;width:5.8rem;color:var(--dim);}
+.popup-stat-bar{flex:1;height:.45rem;border-radius:.25rem;background:rgba(255,255,255,.08);overflow:hidden;}
+.popup-stat-fill{height:100%;border-radius:4px;}
+.popup-stat-num{font-size:.72rem;font-weight:bold;width:30px;text-align:right;}
+.popup-section{margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border);}
+.popup-section-lbl{font-size:.58rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:.4rem;}
+.popup-agents{display:flex;gap:.5rem;flex-wrap:wrap;}
+.popup-agent-chip{padding:.2rem .6rem;border-radius:.75rem;font-size:.72rem;font-weight:bold;}
+.popup-vp-chips{display:flex;gap:.4rem;flex-wrap:wrap;}
+.popup-vp-chip{padding:.25rem .65rem;border-radius:.4rem;font-size:.72rem;font-weight:bold;}
+.popup-card-type{font-size:.62rem;text-transform:uppercase;letter-spacing:2px;margin-bottom:.4rem;}
+.popup-card-icon{font-size:2.4rem;margin:.5rem 0;}
+.popup-card-cost{display:inline-block;background:rgba(241,196,15,.12);color:#f1c40f;border:1px solid rgba(241,196,15,.25);padding:.2rem .65rem;border-radius:.4rem;font-size:.75rem;font-weight:bold;margin-bottom:.75rem;}
+.popup-card-desc{font-size:.85rem;line-height:1.65;color:#bbb;margin-bottom:.75rem;}
+.popup-card-note{font-size:.7rem;color:#f39c12;background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.2);padding:.4rem .65rem;border-radius:.4rem;}
+.popup-play-btn{width:100%;margin-top:.9rem;padding:.65rem;border-radius:.45rem;border:none;background:linear-gradient(135deg,#3498db,#2980b9);color:#fff;font-size:.82rem;font-weight:bold;cursor:pointer;letter-spacing:1px;}
+.popup-play-btn:hover{opacity:.88;}
+.popup-burn-section{margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border);}
+.popup-burn-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:1.5px;color:#f39c12;margin-bottom:.5rem;}
+.popup-burn-btns{display:flex;gap:.4rem;}
+.popup-burn-btn{flex:1;padding:.45rem .3rem;border-radius:.35rem;border:1px solid rgba(243,156,18,.3);background:rgba(243,156,18,.07);color:#f39c12;font-size:.72rem;font-weight:bold;cursor:pointer;transition:background .15s;}
+.popup-burn-btn:hover{background:rgba(243,156,18,.2);border-color:rgba(243,156,18,.55);}
+
+/* ── RULES OVERLAY ── */
+.rules-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:250;display:none;align-items:center;justify-content:center;}
+.rules-overlay.show{display:flex;}
+.rules-panel{background:#13132a;border:1px solid #2e2e50;border-radius:1rem;width:min(700px,94vw);max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 2rem 5rem rgba(0,0,0,.75);position:relative;}
+.rules-hd{padding:.7rem 1.1rem;border-bottom:1px solid #2e2e50;display:flex;align-items:center;gap:.5rem;font-size:.88rem;font-weight:900;letter-spacing:.5px;flex-shrink:0;}
+.rules-hd-icon{font-size:1.1rem;}
+.rules-close{position:absolute;top:.6rem;right:.8rem;background:transparent;border:none;color:var(--dim);font-size:1rem;cursor:pointer;padding:.25rem .4rem;border-radius:.25rem;}
+.rules-close:hover{color:var(--text);background:rgba(255,255,255,.07);}
+.rules-tabs{display:flex;border-bottom:1px solid #2e2e50;flex-shrink:0;}
+.rules-tab{flex:1;padding:.55rem .4rem;font-size:.68rem;font-weight:bold;text-align:center;cursor:pointer;border:none;background:transparent;color:var(--dim);letter-spacing:.6px;text-transform:uppercase;border-bottom:2px solid transparent;transition:color .15s;}
+.rules-tab.active{color:#fff;border-bottom-color:#3498db;}
+.rules-tab:hover:not(.active){color:#ccc;background:rgba(255,255,255,.04);}
+.rules-body{overflow-y:auto;padding:1rem 1.1rem 1.4rem;flex:1;scrollbar-width:thin;scrollbar-color:#2e2e50 transparent;}
+.r-sec{margin-bottom:1.3rem;}
+.r-sec-lbl{font-size:.58rem;text-transform:uppercase;letter-spacing:2px;color:var(--dim);margin-bottom:.6rem;padding-bottom:.35rem;border-bottom:1px solid #2a2a45;}
+.r-row{display:flex;gap:.5rem;align-items:flex-start;margin-bottom:.45rem;}
+.r-icon{font-size:1rem;width:1.4rem;flex-shrink:0;text-align:center;}
+.r-text{font-size:.78rem;line-height:1.55;color:#ccc;}
+.r-text b{color:#fff;}
+.r-chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.3rem;}
+.r-chip{padding:.2rem .55rem;border-radius:.35rem;font-size:.65rem;font-weight:bold;}
+.r-2col{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;}
+.r-card-block{background:rgba(255,255,255,.03);border:1px solid #2a2a45;border-radius:.5rem;padding:.6rem .75rem;}
+.r-card-name{font-size:.78rem;font-weight:bold;margin-bottom:.15rem;}
+.r-card-meta{font-size:.6rem;color:var(--dim);margin-bottom:.25rem;}
+.r-card-desc{font-size:.72rem;color:#bbb;line-height:1.45;}
+.r-soc-card{background:rgba(255,255,255,.03);border:1px solid #2a2a45;border-radius:.6rem;padding:.75rem .9rem;margin-bottom:.55rem;}
+.r-soc-name{font-size:.88rem;font-weight:900;margin-bottom:.25rem;}
+.r-soc-vp{font-size:.72rem;color:#bbb;line-height:1.5;}
+.r-soc-vp b{color:#fff;}
+.r-danger-bar{display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem;}
+.r-danger-fill{height:.5rem;border-radius:.25rem;flex:1;}
+.r-kv{display:flex;justify-content:space-between;align-items:baseline;font-size:.75rem;margin-bottom:.3rem;}
+.r-kv-k{color:var(--dim);}
+.r-kv-v{color:#fff;font-weight:bold;}
+.r-flavour{background:linear-gradient(135deg,rgba(52,152,219,.07),rgba(155,89,182,.07));border:1px solid rgba(255,255,255,.08);border-radius:.6rem;padding:.9rem 1rem 1rem;margin-bottom:1.3rem;}
+.r-flavour-quote{font-size:.78rem;font-style:italic;color:#aaa;border-left:3px solid #3498db;padding-left:.7rem;margin-bottom:.75rem;line-height:1.6;}
+.r-flavour p{font-size:.77rem;color:#c5c5d8;line-height:1.65;margin:0 0 .55rem;}
+.r-flavour p:last-child{margin-bottom:0;}
+.r-flavour b{color:#fff;}
+
+/* ── SETUP ── */
+#setup{flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:30px;overflow-y:auto;}
+.gtitle{font-size:2rem;letter-spacing:6px;text-transform:uppercase;font-weight:900;color:#fff;}
+.gsub{color:var(--dim);font-style:italic;letter-spacing:3px;font-size:0.8rem;}
+.sbox{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px;width:min(900px,92vw);}
+.sbox h3{font-size:0.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--dim);margin-bottom:14px;}
+.soc-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+.soc-btn{padding:12px 6px;border-radius:8px;border:2px solid var(--border);background:transparent;color:var(--text);cursor:pointer;transition:all .15s;text-align:center;}
+.soc-btn .si{font-size:1.3rem;display:block;margin-bottom:3px;}
+.soc-btn .sn{font-size:0.72rem;font-weight:bold;display:block;}
+.soc-btn .sd{font-size:0.58rem;color:var(--dim);display:block;margin-top:2px;line-height:1.3;}
+.soc-btn.selected{border-color:currentColor;background:rgba(255,255,255,0.06);}
+.prow{display:flex;gap:8px;align-items:center;margin-bottom:10px;}
+.plbl{width:56px;font-size:0.75rem;color:var(--dim);flex-shrink:0;}
+.mode-tabs,.thresh-row{display:flex;gap:8px;}
+.tab-btn,.thresh-btn{flex:1;padding:9px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--dim);cursor:pointer;font-size:0.8rem;transition:all .15s;text-align:center;}
+.tab-btn.active,.thresh-btn.active{border-color:#888;color:var(--text);background:rgba(255,255,255,0.06);}
+.start-btn{padding:13px 50px;font-size:0.9rem;letter-spacing:3px;text-transform:uppercase;background:linear-gradient(135deg,#3498db,#e74c3c);border:none;border-radius:8px;color:#fff;cursor:pointer;font-weight:bold;}
+.start-btn:hover{opacity:.88;}
+.rm-btn{background:transparent;border:none;color:#c0392b;cursor:pointer;font-size:1rem;padding:4px 8px;}
+.add-btn{width:100%;padding:8px;border:1px dashed var(--border);border-radius:6px;background:transparent;color:var(--dim);cursor:pointer;font-size:0.8rem;margin-top:4px;}
+.add-btn:hover{color:var(--text);border-color:#555;}
+.sp-select{flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:0.8rem;}
+
+/* ── GAME SCREEN ── */
+#game{flex-direction:row;}
+.sidebar{width:282px;min-width:282px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;gap:8px;padding:10px;overflow-y:auto;}
+.sw{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:7px;padding:9px;}
+.sw-lbl{font-size:0.58rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:7px;}
+.vp-row{display:flex;align-items:center;gap:5px;margin-bottom:6px;}
+.vp-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.vp-nm{flex:1;font-size:0.73rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.vp-val{font-size:0.82rem;font-weight:bold;}
+.vp-bar{height:3px;border-radius:2px;background:var(--border);margin-top:2px;}
+.vp-fill{height:100%;border-radius:2px;transition:width .3s;}
+.meter-row{margin-bottom:7px;}
+.meter-labels{display:flex;justify-content:space-between;font-size:0.6rem;color:var(--dim);margin-bottom:3px;}
+.meter-track{height:9px;border-radius:5px;background:var(--border);overflow:hidden;}
+.mfill{height:100%;border-radius:5px;transition:width .4s;}
+.mfill.tension{background:linear-gradient(90deg,#f39c12,#e74c3c);}
+.mfill.stability{background:linear-gradient(90deg,#27ae60,#2ecc71);}
+.log-w{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:120px;}
+.log-scroll{flex:1;overflow-y:auto;font-size:0.62rem;line-height:1.8;color:var(--dim);}
+.log-scroll p{border-bottom:1px solid rgba(255,255,255,.03);padding:1px 0;}
+.log-scroll p strong{color:#aaa;}
+
+/* ── MAIN AREA ── */
+.main-col{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:var(--panel);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:12px;flex-shrink:0;position:relative;}
+.tb-logo{font-size:0.7rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--dim);}
+.tb-turn{padding:3px 12px;border-radius:14px;font-size:0.72rem;font-weight:bold;}
+.phase-lbl{padding:2px 8px;border-radius:3px;background:rgba(255,255,255,.07);font-size:0.6rem;letter-spacing:1px;}
+.ip-info{margin-left:auto;font-size:0.8rem;}
+.ip-v{font-weight:bold;color:#f39c12;}
+.board-wrap{flex:1;overflow:hidden;position:relative;}
+.world-grid{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);gap:6px;position:absolute;inset:12px;}
+
+/* ── STATE TILES ── */
+.st{border-radius:7px;border:2px solid var(--border);padding:6px;cursor:pointer;transition:all .14s;position:relative;display:flex;flex-direction:column;gap:3px;user-select:none;}
+.st:hover{transform:scale(1.03);z-index:15;}
+.st.superpower{border-width:2px;}
+.st.gov-provisional{border-style:dashed;}
+.st.valid-target{box-shadow:0 0 0 2px rgba(255,255,255,.9);animation:tpulse .7s infinite alternate;z-index:5;}
+@keyframes tpulse{from{box-shadow:0 0 0 2px rgba(255,255,255,.4);}to{box-shadow:0 0 0 3px #fff;}}
+.st-head{display:flex;align-items:flex-start;gap:4px;}
+.st-banner{margin:-6px -6px 4px -6px;padding:5px 8px;background:rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.08);border-radius:5px 5px 0 0;display:flex;align-items:center;gap:6px;}
+.st-flag-lg{font-size:1.6rem;line-height:1;flex-shrink:0;}
+.st-gicon{font-size:.9rem;line-height:1;flex-shrink:0;margin-left:auto;}
+.st-name{font-size:.68rem;font-weight:bold;text-transform:uppercase;letter-spacing:.3px;line-height:1.2;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.st-tags{display:flex;gap:3px;flex-wrap:wrap;}
+.tag{font-size:.6rem;padding:2px 5px;border-radius:2px;font-weight:bold;}
+.tag-eco-cap{background:rgba(243,156,18,.18);color:#f39c12;}
+.tag-eco-com{background:rgba(231,76,60,.18);color:#e74c3c;}
+.tag-cul-sec{background:rgba(52,152,219,.18);color:#3498db;}
+.tag-cul-rel{background:rgba(155,89,182,.18);color:#9b59b6;}
+.st-stats{display:grid;grid-template-columns:1fr 1fr;gap:2px;}
+.ss{font-size:.7rem;display:flex;align-items:center;gap:3px;}
+.ssi{font-size:.72rem;width:14px;text-align:center;}
+.st-agents{display:flex;gap:4px;flex-wrap:wrap;min-height:20px;margin-top:2px;}
+.agent-meeple{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;border:2px solid rgba(0,0,0,.35);flex-shrink:0;cursor:default;}
+.st-flag{font-size:1.05rem;line-height:1;flex-shrink:0;}
+
+/* ── HAND AREA ── */
+.hand-area{background:var(--panel);border-top:1px solid var(--border);padding:9px 14px;flex-shrink:0;}
+.hand-row1{display:flex;gap:6px;margin-bottom:7px;align-items:center;}
+.hand-lbl{font-size:.62rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);}
+.htabs{display:flex;gap:5px;margin-left:auto;}
+.htab{padding:3px 10px;border-radius:4px 4px 0 0;font-size:.6rem;text-transform:uppercase;letter-spacing:1px;cursor:pointer;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--dim);transition:all .13s;}
+.htab.active{color:var(--text);border-color:#555;background:rgba(255,255,255,.06);}
+.htab.hp.active{border-top-color:var(--pol);color:var(--pol);}
+.htab.hm.active{border-top-color:var(--mil);color:var(--mil);}
+.htab.hc.active{border-top-color:var(--cul);color:var(--cul);}
+.htab.he.active{border-top-color:var(--eco);color:var(--eco);}
+.htab.ha.active{border-top-color:#aaa;color:#ccc;}
+.hcards{display:flex;gap:8px;overflow-x:auto;padding-bottom:3px;min-height:145px;}
+
+/* ── CARDS ── */
+.card{width:96px;min-width:96px;height:140px;border-radius:8px;border:2px solid var(--border);background:#181826;padding:7px;cursor:pointer;transition:all .17s;display:flex;flex-direction:column;gap:3px;position:relative;user-select:none;flex-shrink:0;}
+.card:hover{transform:translateY(-10px);z-index:30;}
+.card.sel{transform:translateY(-14px);box-shadow:0 0 0 2px #fff;z-index:35;}
+.card.nope{opacity:.38;cursor:not-allowed;}
+.card.tp{border-top-color:var(--pol);}
+.card.tm{border-top-color:var(--mil);}
+.card.tc{border-top-color:var(--cul);}
+.card.te{border-top-color:var(--eco);}
+.card.ta{border-top-color:#888;}
+.ccost{position:absolute;top:5px;right:5px;font-size:.68rem;font-weight:bold;color:#f1c40f;}
+.ctlbl{font-size:.5rem;text-transform:uppercase;letter-spacing:1px;color:var(--dim);}
+.cname{font-size:.68rem;font-weight:bold;line-height:1.2;}
+.cicon{font-size:1.3rem;text-align:center;}
+.cdesc{font-size:.56rem;color:var(--dim);line-height:1.35;flex:1;}
+
+/* ── ACTION BAR ── */
+.act-bar{display:flex;gap:6px;padding:6px 14px;background:var(--bg);border-top:1px solid var(--border);flex-shrink:0;align-items:center;}
+.ab{padding:6px 13px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:.74rem;transition:all .14s;}
+.ab:hover:not(:disabled){background:rgba(255,255,255,.06);}
+.ab:disabled{opacity:.3;cursor:not-allowed;}
+.ab.prim{border-color:#666;background:rgba(255,255,255,.08);}
+.ab.warn{border-color:#f39c12;color:#f39c12;}
+.ab.cancel{border-color:#e74c3c;color:#e74c3c;}
+.agent-info{margin-left:auto;font-size:.72rem;color:var(--dim);}
+
+/* ── NOTIFICATIONS ── */
+.notif{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#1c1c2e;border:1px solid var(--border);border-radius:7px;padding:9px 18px;font-size:.78rem;z-index:999;opacity:0;transition:opacity .25s;pointer-events:none;max-width:380px;text-align:center;}
+.notif.show{opacity:1;}
+
+/* ── END SCREENS ── */
+#worldend{flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;}
+#worldend h1{font-size:2.4rem;letter-spacing:4px;text-transform:uppercase;color:#e74c3c;}
+#worldend p{color:var(--dim);max-width:420px;}
+#win{flex-direction:column;align-items:center;justify-content:center;gap:18px;}
+#win h1{font-size:2.4rem;letter-spacing:4px;text-transform:uppercase;}
+.res-box{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px;min-width:380px;}
+.res-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+</style>
+</head>
+<body>
+<div class="notif" id="notif"></div>
+<div id="tt"></div>
+
+<!-- ══════════ POPUP ══════════ -->
+<div class="popup-overlay" id="popupOverlay" onclick="onOverlayClick(event)">
+  <div class="popup-box" id="popupBox">
+    <button class="popup-close" onclick="closePopup()">✕</button>
+    <div id="popupContent"></div>
+  </div>
+</div>
+
+<!-- ══════════ RULES ══════════ -->
+<div class="rules-overlay" id="rulesOverlay" onclick="onRulesOverlayClick(event)">
+  <div class="rules-panel" id="rulesPanel">
+    <div class="rules-hd"><span class="rules-hd-icon">📖</span> Rules Reference</div>
+    <button class="rules-close" onclick="closeRules()">✕</button>
+    <div class="rules-tabs" id="rulesTabs"></div>
+    <div class="rules-body" id="rulesBody"></div>
+  </div>
+</div>
+
+<!-- ══════════ SETUP ══════════ -->
+<div class="screen active" id="setup">
+  <div class="gtitle">Global Thermo-Nuclear Warfare</div>
+  <div class="gsub">"Would you like to play a game?"</div>
+
+  <div class="sbox">
+    <h3>Mode</h3>
+    <div class="mode-tabs">
+      <button class="tab-btn active" id="mHot" onclick="setMode('hot')">Hotseat Multiplayer</button>
+      <button class="tab-btn" id="mSolo" onclick="setMode('solo')">vs AI</button>
+    </div>
+  </div>
+
+  <div class="sbox">
+    <h3>Secret Societies — Choose Your Cause</h3>
+    <div class="soc-grid" id="socGrid"></div>
+  </div>
+
+  <div class="sbox">
+    <h3>Players</h3>
+    <div id="pRows"></div>
+    <button class="add-btn" id="addPBtn" onclick="addPlayer()">+ Add Player</button>
+  </div>
+
+  <div class="sbox">
+    <h3>Victory Threshold</h3>
+    <div class="thresh-row">
+      <button class="thresh-btn" id="t8"  onclick="setThresh(8)">8 VP (Quick)</button>
+      <button class="thresh-btn active" id="t13" onclick="setThresh(13)">13 VP (Standard)</button>
+      <button class="thresh-btn" id="t20" onclick="setThresh(20)">20 VP (Epic)</button>
+    </div>
+  </div>
+
+  <button class="start-btn" onclick="startGame()">Begin</button>
+</div>
+
+<!-- ══════════ GAME ══════════ -->
+<div class="screen" id="game">
+  <div class="sidebar">
+    <div style="font-size:.8rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--dim);padding:2px 0;">GTNW</div>
+
+    <div class="sw">
+      <div class="sw-lbl">Victory Points (Win at <span id="vpThreshLbl">13</span>)</div>
+      <div id="vpList"></div>
+    </div>
+
+    <div class="sw">
+      <div class="sw-lbl">Nuclear Tension</div>
+      <div class="meter-row" data-tip-key="tension">
+        <div class="meter-labels"><span>Safe</span><span id="tensionVal">0</span><span>☢ War</span></div>
+        <div class="meter-track"><div class="mfill tension" id="tensionBar" style="width:0%"></div></div>
+      </div>
+      <div class="sw-lbl" style="margin-top:8px">World Stability</div>
+      <div class="meter-row" data-tip-key="stability">
+        <div class="meter-labels"><span>Collapse</span><span id="stabVal">10</span><span>Stable</span></div>
+        <div class="meter-track"><div class="mfill stability" id="stabBar" style="width:100%"></div></div>
+      </div>
+    </div>
+
+    <div class="sw">
+      <div class="sw-lbl">Board Legend <span style="color:#444;font-size:.55rem">— hover for details</span></div>
+
+      <div class="legend-section-lbl">Government</div>
+      <div class="legend-grid">
+        <div class="legend-item" data-tip-key="gov-republic">        <span class="legend-icon">🗳</span><span class="legend-name">Republic</span></div>
+        <div class="legend-item" data-tip-key="gov-monarchy">        <span class="legend-icon">👑</span><span class="legend-name">Monarchy</span></div>
+        <div class="legend-item" data-tip-key="gov-dictatorship">    <span class="legend-icon">✊</span><span class="legend-name">Dictatorship</span></div>
+        <div class="legend-item" data-tip-key="gov-provisional">     <span class="legend-icon">⚡</span><span class="legend-name">Provisional</span><span class="legend-note">unstable</span></div>
+      </div>
+
+      <div class="legend-section-lbl" style="margin-top:8px">Economy</div>
+      <div class="legend-grid">
+        <div class="legend-item" data-tip-key="eco-capitalist"><span class="legend-tag tag-eco-cap">CAP</span><span class="legend-name">Capitalist</span></div>
+        <div class="legend-item" data-tip-key="eco-communist"> <span class="legend-tag tag-eco-com">COM</span><span class="legend-name">Communist</span></div>
+      </div>
+
+      <div class="legend-section-lbl" style="margin-top:8px">Culture</div>
+      <div class="legend-grid">
+        <div class="legend-item" data-tip-key="cul-secular">  <span class="legend-tag tag-cul-sec">SEC</span><span class="legend-name">Secular</span></div>
+        <div class="legend-item" data-tip-key="cul-religious"><span class="legend-tag tag-cul-rel">REL</span><span class="legend-name">Religious</span></div>
+      </div>
+
+      <div class="legend-section-lbl" style="margin-top:8px">State Stats</div>
+      <div class="legend-grid">
+        <div class="legend-item" data-tip-key="stat-military">   <span class="legend-icon" style="color:#e74c3c">⚔</span><span class="legend-name">Military</span></div>
+        <div class="legend-item" data-tip-key="stat-nuclear">    <span class="legend-icon" style="color:#f39c12">☢</span><span class="legend-name">Nuclear</span></div>
+        <div class="legend-item" data-tip-key="stat-patriotism"> <span class="legend-icon" style="color:#9b59b6">♥</span><span class="legend-name">Patriotism</span></div>
+        <div class="legend-item" data-tip-key="stat-resources">  <span class="legend-icon" style="color:#2ecc71">💎</span><span class="legend-name">Resources</span></div>
+      </div>
+
+      <div class="legend-section-lbl" style="margin-top:8px">Agents</div>
+      <div class="legend-grid" style="grid-template-columns:1fr">
+        <div class="legend-item"><span style="font-size:1rem">🕵️</span><span class="legend-name" style="margin-left:6px">Spy meeple = agent stationed here.</span></div>
+        <div class="legend-item" style="font-size:.62rem;color:var(--dim);padding:2px 0 0 4px">Colour matches the player's society.</div>
+      </div>
+    </div>
+
+    <div class="sw log-w">
+      <div class="sw-lbl">Event Log</div>
+      <div class="log-scroll" id="logScroll"></div>
+    </div>
+  </div>
+
+  <div class="main-col">
+    <div class="topbar">
+      <div class="tb-logo">GTNW</div>
+      <div class="tb-turn" id="tbTurn">—</div>
+      <div class="phase-lbl" id="phaseLbl">Draw Phase</div>
+      <div class="tb-round" id="roundLbl">Round 1</div>
+      <div class="ip-info" data-tip-key="ip">IP: <span class="ip-v" id="ipVal">0</span> <span style="font-size:.65rem;color:var(--dim)" id="ipIncome">(+0/turn)</span></div>
+      <button class="ab" onclick="showRules()" style="margin-left:4px;font-size:.9rem;padding:4px 8px;" data-tip="<b>📖 Rules</b>Open the living rules reference — mechanics, societies, and card list.">📖</button>
+      <button class="ab" id="settingsBtn" onclick="toggleSettings()" style="margin-left:4px;font-size:1rem;padding:4px 8px;" data-tip-key="btn-settings">⚙</button>
+    </div>
+    <!-- Settings panel -->
+    <div id="settingsPanel" style="display:none;position:absolute;top:44px;right:12px;z-index:300;background:#18182a;border:1px solid #33334a;border-radius:10px;padding:16px 20px;box-shadow:0 8px 32px rgba(0,0,0,.6);min-width:220px;">
+      <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:12px;">Settings</div>
+      <div style="font-size:.78rem;margin-bottom:8px;color:#ccc;">Text Size</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button onclick="changeTextSize(-1)" style="width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:1.1rem;cursor:pointer;line-height:1;">−</button>
+        <div style="flex:1;text-align:center;">
+          <span id="textSizeLbl" style="font-size:.82rem;color:#fff;font-weight:bold;">Medium</span>
+          <div style="font-size:.62rem;color:var(--dim)" id="textSizePx">13px</div>
+        </div>
+        <button onclick="changeTextSize(1)"  style="width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:1.1rem;cursor:pointer;line-height:1;">+</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:12px;">
+        <button onclick="setTextSize(0)" style="flex:1;padding:5px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-size:.7rem;">S</button>
+        <button onclick="setTextSize(1)" style="flex:1;padding:5px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-size:.7rem;">M</button>
+        <button onclick="setTextSize(2)" style="flex:1;padding:5px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-size:.7rem;">L</button>
+        <button onclick="setTextSize(3)" style="flex:1;padding:5px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-size:.7rem;">XL</button>
+        <button onclick="setTextSize(4)" style="flex:1;padding:5px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-size:.7rem;">XXL</button>
+      </div>
+    </div>
+
+    <div class="board-wrap">
+      <div class="world-grid" id="wGrid"></div>
+    </div>
+
+    <div class="act-bar">
+      <button class="ab" id="bDraw" onclick="doDrawCard()" data-tip-key="btn-draw">Draw Card</button>
+      <button class="ab prim" id="bPlay" onclick="doPlayCard()" disabled data-tip-key="btn-play">Play Card</button>
+      <button class="ab cancel" id="bCancel" onclick="cancelSel()" style="display:none" data-tip-key="btn-cancel">Cancel</button>
+      <button class="ab warn" id="bAgent" onclick="toggleAgentMode()" style="display:none" data-tip-key="btn-agent">Place Agent</button>
+      <button class="ab" onclick="doEndTurn()" id="bEnd" data-tip-key="btn-end">End Turn</button>
+      <div class="agent-info" id="agentInfo"></div>
+    </div>
+
+    <div class="hand-area">
+      <div class="hand-row1">
+        <span class="hand-lbl" id="handLbl">Hand</span>
+        <div class="htabs">
+          <button class="htab ha active" id="htAll" onclick="setHandTab('all')" data-tip-key="tab-all">All</button>
+          <button class="htab hp" id="htPol" onclick="setHandTab('political')" data-tip-key="tab-political">Political</button>
+          <button class="htab hm" id="htMil" onclick="setHandTab('military')" data-tip-key="tab-military">Military</button>
+          <button class="htab hc" id="htCul" onclick="setHandTab('cultural')" data-tip-key="tab-cultural">Cultural</button>
+          <button class="htab he" id="htEco" onclick="setHandTab('economic')" data-tip-key="tab-economic">Economic</button>
+        </div>
+      </div>
+      <div class="hcards" id="hCards"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ WORLD END ══════════ -->
+<div class="screen" id="worldend">
+  <h1 id="weTitle">Nuclear Holocaust</h1>
+  <p id="weDesc">The world has been destroyed.</p>
+  <div class="res-box" id="weStats"></div>
+  <button class="start-btn" onclick="resetGame()">Play Again</button>
+</div>
+
+<!-- ══════════ WIN ══════════ -->
+<div class="screen" id="win">
+  <h1 id="winTitle">Victory!</h1>
+  <p id="winSub" style="color:var(--dim);"></p>
+  <div class="res-box" id="winStats"></div>
+  <button class="start-btn" onclick="resetGame()">Play Again</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  SOCIETIES
+// ═══════════════════════════════════════════════════════
+const SOCIETIES = {
+  TCH: { id:'TCH', name:'Technocrats',  icon:'🔬', color:'#3498db',
+    desc:'Republic + Secular + Patriotism',
+    vpDesc:'VP: Each Republic with Secular culture and any Patriotism',
+    vpCheck: s => s.gov==='republic' && s.cult==='secular' && s.patriotism > 0 },
+  THE: { id:'THE', name:'Theocrats',    icon:'✝',  color:'#9b59b6',
+    desc:'Dictatorship + Religious + Patriotism',
+    vpDesc:'VP: Each Dictatorship with Religious culture and any Patriotism',
+    vpCheck: s => s.gov==='dictatorship' && s.cult==='religious' && s.patriotism > 0 },
+  PLU: { id:'PLU', name:'Plutocrats',   icon:'💰', color:'#f39c12',
+    desc:'Capitalist state with Nuclear Arms',
+    vpDesc:'VP: Each Capitalist state with any Nuclear stockpile',
+    vpCheck: s => s.econ==='capitalist' && s.nuclear > 0 },
+  STR: { id:'STR', name:'Stratocrats',  icon:'⚔',  color:'#e74c3c',
+    desc:'Communist state with Conventional Military',
+    vpDesc:'VP: Each Communist state with Military ≥ 3',
+    vpCheck: s => s.econ==='communist' && s.military >= 3 },
+  ANA: { id:'ANA', name:'Anarchists',   icon:'🏴', color:'#1abc9c',
+    desc:'Provisional government with Cultural presence',
+    vpDesc:'VP: Each Provisional government with any Patriotism',
+    vpCheck: s => s.gov==='provisional' && s.patriotism > 0 },
+};
+
+// ═══════════════════════════════════════════════════════
+//  STATES  (5×5 grid, superpowers at corners)
+// ═══════════════════════════════════════════════════════
+const INIT_STATES = [
+  {id:'USA', name:'United States', gov:'republic',     econ:'capitalist', cult:'secular',   military:8, nuclear:4, patriotism:3, resources:4, col:0,row:0, sp:true},
+  {id:'FRA', name:'France',        gov:'republic',     econ:'capitalist', cult:'secular',   military:4, nuclear:2, patriotism:3, resources:3, col:1,row:0},
+  {id:'GER', name:'W. Germany',    gov:'republic',     econ:'capitalist', cult:'secular',   military:3, nuclear:0, patriotism:2, resources:4, col:2,row:0},
+  {id:'JPN', name:'Japan',         gov:'monarchy',     econ:'capitalist', cult:'secular',   military:2, nuclear:0, patriotism:3, resources:4, col:3,row:0},
+  {id:'USSR',name:'Soviet Union',  gov:'dictatorship', econ:'communist',  cult:'secular',   military:8, nuclear:4, patriotism:2, resources:3, col:4,row:0, sp:true},
+  {id:'CAN', name:'Canada',        gov:'republic',     econ:'capitalist', cult:'secular',   military:2, nuclear:0, patriotism:2, resources:4, col:0,row:1},
+  {id:'ITA', name:'Italy',         gov:'republic',     econ:'capitalist', cult:'religious', military:3, nuclear:0, patriotism:2, resources:3, col:1,row:1},
+  {id:'TUR', name:'Turkey',        gov:'republic',     econ:'capitalist', cult:'religious', military:4, nuclear:0, patriotism:2, resources:2, col:2,row:1},
+  {id:'IND', name:'India',         gov:'republic',     econ:'communist',  cult:'religious', military:5, nuclear:1, patriotism:3, resources:3, col:3,row:1},
+  {id:'CUB', name:'Cuba',          gov:'dictatorship', econ:'communist',  cult:'secular',   military:3, nuclear:0, patriotism:2, resources:2, col:4,row:1},
+  {id:'MEX', name:'Mexico',        gov:'republic',     econ:'capitalist', cult:'religious', military:3, nuclear:0, patriotism:2, resources:3, col:0,row:2},
+  {id:'EGY', name:'Egypt',         gov:'dictatorship', econ:'communist',  cult:'religious', military:4, nuclear:0, patriotism:3, resources:2, col:1,row:2},
+  {id:'IRN', name:'Iran',          gov:'monarchy',     econ:'capitalist', cult:'religious', military:3, nuclear:0, patriotism:3, resources:4, col:2,row:2},
+  {id:'PAK', name:'Pakistan',      gov:'provisional',  econ:'capitalist', cult:'religious', military:3, nuclear:1, patriotism:2, resources:2, col:3,row:2},
+  {id:'NKO', name:'North Korea',   gov:'dictatorship', econ:'communist',  cult:'secular',   military:4, nuclear:1, patriotism:1, resources:1, col:4,row:2},
+  {id:'BRZ', name:'Brazil',        gov:'republic',     econ:'capitalist', cult:'religious', military:3, nuclear:0, patriotism:3, resources:4, col:0,row:3},
+  {id:'NGA', name:'Nigeria',       gov:'provisional',  econ:'capitalist', cult:'religious', military:2, nuclear:0, patriotism:2, resources:3, col:1,row:3},
+  {id:'SAU', name:'Saudi Arabia',  gov:'monarchy',     econ:'capitalist', cult:'religious', military:3, nuclear:0, patriotism:2, resources:5, col:2,row:3},
+  {id:'IDN', name:'Indonesia',     gov:'dictatorship', econ:'capitalist', cult:'religious', military:3, nuclear:0, patriotism:2, resources:3, col:3,row:3},
+  {id:'VNM', name:'Vietnam',       gov:'dictatorship', econ:'communist',  cult:'secular',   military:4, nuclear:0, patriotism:3, resources:2, col:4,row:3},
+  {id:'CHN', name:'China',         gov:'dictatorship', econ:'communist',  cult:'secular',   military:7, nuclear:3, patriotism:3, resources:3, col:0,row:4, sp:true},
+  {id:'ARG', name:'Argentina',     gov:'provisional',  econ:'capitalist', cult:'religious', military:2, nuclear:0, patriotism:2, resources:3, col:1,row:4},
+  {id:'ZAF', name:'S. Africa',     gov:'dictatorship', econ:'capitalist', cult:'religious', military:3, nuclear:1, patriotism:1, resources:4, col:2,row:4},
+  {id:'AUS', name:'Australia',     gov:'republic',     econ:'capitalist', cult:'secular',   military:3, nuclear:0, patriotism:3, resources:4, col:3,row:4},
+  {id:'UK',  name:'United Kingdom',gov:'monarchy',     econ:'capitalist', cult:'secular',   military:5, nuclear:3, patriotism:3, resources:3, col:4,row:4, sp:true},
+];
+
+// ═══════════════════════════════════════════════════════
+//  CARDS
+// ═══════════════════════════════════════════════════════
+const CARD_POOL = [
+  // ── POLITICAL
+  {id:'speechwriter', name:'Speechwriter',     type:'political', cost:2, icon:'📝', desc:'Reorganize state agenda. Change any non-superpower state\'s government one step.', effect:'gov_step', needsAgent:true},
+  {id:'lobbyist',     name:'Lobbyist',         type:'political', cost:2, icon:'💼', desc:'Shift a state toward Republic. Draw 1 card.', effect:'lobbying', needsAgent:true},
+  {id:'assassin',     name:'Assassin',         type:'political', cost:3, icon:'🗡', desc:'Replace Head of State. Change target state to Provisional government.', effect:'assassinate', needsAgent:true},
+  {id:'agitator',     name:'Agitator',         type:'political', cost:1, icon:'📣', desc:'Force a state to execute its next agenda: random small change to gov/econ/cult.', effect:'agitate', needsAgent:true},
+  {id:'reform',       name:'Reform Government',type:'political', cost:3, icon:'📜', desc:'Change a state\'s government to Republic. +1 Patriotism.', effect:'reform_gov', needsAgent:true},
+  {id:'coup',         name:'Stage Coup',       type:'political', cost:4, icon:'⚔',  desc:'Military coup: change state to Dictatorship. Add +2 Military. +1 Tension.', effect:'coup', needsAgent:true},
+  {id:'recruit_ag',   name:'Recruit Agent',    type:'political', cost:2, icon:'🕵', desc:'Place a new Agent in an adjacent state (grid neighbor of any of your states).', effect:'recruit', needsAgent:false},
+  {id:'infiltrate',   name:'Infiltrate',       type:'political', cost:1, icon:'🧑‍💼',desc:'Move one of your agents to any adjacent grid state.', effect:'infiltrate', needsAgent:true, moveAgent:true},
+
+  // ── MILITARY
+  {id:'nuke_threat',  name:'Nuclear Threat',   type:'military',  cost:2, icon:'☢',  desc:'Add +1 Nuclear to a state. +2 Global Tension.', effect:'add_nuclear', needsAgent:true},
+  {id:'build_nukes',  name:'Build Nukes',       type:'military',  cost:3, icon:'💣', desc:'Add +2 Nuclear to a state. +3 Global Tension.', effect:'build_nuclear', needsAgent:true},
+  {id:'arms_buildup', name:'Arms Buildup',      type:'military',  cost:2, icon:'🎖', desc:'Add +3 Conventional Military to a state.', effect:'add_military', needsAgent:true},
+  {id:'mutiny',       name:'Mutiny',            type:'military',  cost:3, icon:'🔫', desc:'Halve a state\'s military. Change it to Provisional government. +1 Tension.', effect:'mutiny', needsAgent:true},
+  {id:'disarm',       name:'Disarmament',       type:'military',  cost:2, icon:'🕊', desc:'Remove -2 Nuclear from a state. -2 Global Tension.', effect:'disarm', needsAgent:true},
+
+  // ── CULTURAL
+  {id:'revolution',   name:'Incite Revolution', type:'cultural',  cost:3, icon:'🔥', desc:'Change target to Provisional government. +3 Patriotism. +1 Tension.', effect:'revolution', needsAgent:true},
+  {id:'revivalism',   name:'Religious Revival',  type:'cultural',  cost:2, icon:'✝',  desc:'Change state culture to Religious. +2 Patriotism.', effect:'set_religious', needsAgent:true},
+  {id:'secularize',   name:'Secularization',    type:'cultural',  cost:2, icon:'🔬', desc:'Change state culture to Secular. +2 Patriotism.', effect:'set_secular', needsAgent:true},
+  {id:'propaganda',   name:'Propaganda',        type:'cultural',  cost:2, icon:'📺', desc:'Add +3 Patriotism to a state.', effect:'add_patriotism', needsAgent:true},
+  {id:'cult_exchg',   name:'Cultural Exchange',  type:'cultural',  cost:1, icon:'🎭', desc:'Add +1 Patriotism. Draw 1 card.', effect:'cult_exchange', needsAgent:true},
+
+  // ── ECONOMIC
+  {id:'free_trade',   name:'Free Trade',        type:'economic',  cost:1, icon:'📈', desc:'Change state to Capitalist economy. Gain +3 IP.', effect:'set_capitalist', needsAgent:true},
+  {id:'nationalize',  name:'Nationalization',   type:'economic',  cost:3, icon:'🏭', desc:'Change state to Communist economy. +2 Resources to state.', effect:'set_communist', needsAgent:true},
+  {id:'privatize',    name:'Privatization',     type:'economic',  cost:3, icon:'🏗',  desc:'Change state to Capitalist economy. +2 Resources.', effect:'set_capitalist2', needsAgent:true},
+  {id:'sanctions',    name:'Sanctions',         type:'economic',  cost:2, icon:'🚫', desc:'Remove -2 Resources from a state. Opponent with agent there loses 2 IP.', effect:'sanctions', needsAgent:true},
+  {id:'resource_dev', name:'Resource Dev.',     type:'economic',  cost:2, icon:'⛏',  desc:'Add +3 Resources to a state. Gain +2 IP.', effect:'resource_dev', needsAgent:true},
+];
+
+// ═══════════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════════
+let G = {};
+let setupPlayers = [];
+let gMode = 'hot';
+let vpThresh = 13;
+let handTab = 'all';
+
+// ═══════════════════════════════════════════════════════
+//  SETUP UI
+// ═══════════════════════════════════════════════════════
+function initSetup() {
+  // Render society grid
+  const sg = document.getElementById('socGrid');
+  sg.innerHTML = Object.values(SOCIETIES).map(s =>
+    `<button class="soc-btn" data-soc="${s.id}" style="color:${s.color}" onclick="noop()">
+      <span class="si">${s.icon}</span>
+      <span class="sn">${s.name}</span>
+      <span class="sd">${s.desc}</span>
+    </button>`
+  ).join('');
+  setupPlayers = [
+    {name:'Player 1', soc:'TCH', sp:'USA'},
+    {name:'Player 2', soc:'STR', sp:'USSR'},
+  ];
+  renderSetupPlayers();
+  setThresh(13);
+}
+function noop(){}
+
+function setMode(m) {
+  gMode = m;
+  document.getElementById('mHot').classList.toggle('active', m==='hot');
+  document.getElementById('mSolo').classList.toggle('active', m==='solo');
+  if (m==='solo' && setupPlayers.length > 2) { setupPlayers = setupPlayers.slice(0,2); }
+  document.getElementById('addPBtn').style.display = m==='solo' ? 'none' : '';
+  renderSetupPlayers();
+}
+
+function setThresh(v) {
+  vpThresh = v;
+  [8,13,20].forEach(t => document.getElementById('t'+t)?.classList.toggle('active', t===v));
+}
+
+function addPlayer() {
+  if (setupPlayers.length >= 5) return;
+  const ids = Object.keys(SOCIETIES);
+  const used = setupPlayers.map(p=>p.soc);
+  const next = ids.find(id=>!used.includes(id)) || ids[0];
+  const sps = ['USA','USSR','CHN','UK','FRA'];
+  setupPlayers.push({name:'Player '+(setupPlayers.length+1), soc:next, sp: sps[setupPlayers.length]});
+  renderSetupPlayers();
+}
+function removePlayer(i) {
+  if (setupPlayers.length <= 2) return;
+  setupPlayers.splice(i,1);
+  renderSetupPlayers();
+}
+function setPlayerSoc(i, soc) { setupPlayers[i].soc = soc; renderSetupPlayers(); }
+function setPlayerSP(i, sp)   { setupPlayers[i].sp  = sp;  renderSetupPlayers(); }
+
+function renderSetupPlayers() {
+  const c = document.getElementById('pRows');
+  const spOptions = ['USA','USSR','CHN','UK','FRA','GER','JPN','UK'].map(id =>
+    `<option value="${id}">${INIT_STATES.find(s=>s.id===id)?.name||id}</option>`).join('');
+  c.innerHTML = setupPlayers.map((p,i) => {
+    const isAI = gMode==='solo' && i>0;
+    return `<div class="prow">
+      <span class="plbl">${isAI?'AI '+i:'P'+(i+1)}</span>
+      ${Object.values(SOCIETIES).map(s=>
+        `<button class="soc-btn ${p.soc===s.id?'selected':''}" style="color:${s.color};padding:8px 5px;" onclick="setPlayerSoc(${i},'${s.id}')">
+          <span class="si" style="font-size:1rem">${s.icon}</span>
+          <span class="sn" style="font-size:.65rem">${s.name}</span>
+        </button>`).join('')}
+      <select class="sp-select" onchange="setPlayerSP(${i},this.value)">
+        ${INIT_STATES.filter(s=>s.sp).map(s=>`<option value="${s.id}" ${p.sp===s.id?'selected':''}>${s.name}</option>`).join('')}
+      </select>
+      ${i>=2?`<button class="rm-btn" onclick="removePlayer(${i})">✕</button>`:''}
+    </div>`;
+  }).join('');
+
+  // update society buttons highlighting
+  document.querySelectorAll('#socGrid .soc-btn').forEach(btn => {
+    const id = btn.dataset.soc;
+    btn.classList.toggle('selected', setupPlayers.some(p=>p.soc===id));
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  GAME START
+// ═══════════════════════════════════════════════════════
+function buildDeck() {
+  const deck = [];
+  CARD_POOL.forEach(c => { deck.push({...c}); deck.push({...c}); });
+  return shuffle(deck);
+}
+function shuffle(a) {
+  const b=[...a];
+  for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}
+  return b;
+}
+
+function startGame() {
+  const players = setupPlayers.map((p, i) => ({
+    name: p.name, soc: p.soc, isAI: gMode==='solo' && i>0,
+    ip: 8, deck: buildDeck(), hand: [], discard: [],
+    agents: [p.sp], // stateIds where this player has agents
+    startSP: p.sp,
+  }));
+
+  const states = INIT_STATES.map(s => ({...s}));
+
+  G = {
+    players, states,
+    turn: 0, round: 1,
+    phase: 'draw',
+    drawn: false,
+    vpThresh,
+    tension: 0,   // 0-10
+    stability: 10, // 10-0
+    selCard: null, selCardIdx: null,
+    agentMode: false,
+    infiltrateFrom: null,
+    pendingTarget: false,
+    burnMode: null, burnCard: null, burnCardIdx: null, burnMoveFrom: null,
+    log: [],
+  };
+
+  // Deal 4 starting cards
+  players.forEach(p => { for(let i=0;i<4;i++) dealCard(p); });
+
+  showScreen('game');
+  document.getElementById('vpThreshLbl').textContent = vpThresh;
+  logE(`Round 1 begins. ${cur().name} (${SOCIETIES[cur().soc].icon} ${SOCIETIES[cur().soc].name}) goes first.`);
+  setPhase('draw');
+  renderAll();
+  if (cur().isAI) setTimeout(aiTurn, 700);
+}
+
+function dealCard(p) {
+  if (!p.deck.length) { p.deck = shuffle(p.discard); p.discard = []; }
+  if (p.deck.length) p.hand.push(p.deck.pop());
+}
+
+// ═══════════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════════
+function renderAll() {
+  renderBoard();
+  renderHand();
+  renderVP();
+  renderMeters();
+  renderTurnHeader();
+}
+
+const GOV_ICONS = { republic:'🗳', monarchy:'👑', dictatorship:'✊', provisional:'⚡' };
+
+function renderBoard() {
+  const grid = document.getElementById('wGrid');
+  grid.innerHTML = '';
+  G.states.forEach(s => {
+    const playerAgents = G.players.map((p,i) => p.agents.includes(s.id) ? i : -1).filter(i=>i>=0);
+    const isValid = G.pendingTarget && isValidTarget(s.id);
+
+    const div = document.createElement('div');
+    div.className = `st ${s.sp?'superpower':''} gov-${s.gov} ${isValid?'valid-target':''}`;
+    div.dataset.sid = s.id;
+    div.style.gridColumn = s.col+1;
+    div.style.gridRow    = s.row+1;
+
+    // Border color: most-prominent agent
+    if (playerAgents.length > 0) {
+      const pIdx = playerAgents[0];
+      const soc = SOCIETIES[G.players[pIdx].soc];
+      div.style.borderColor = soc.color+'99';
+    }
+
+    div.innerHTML = `
+      <div class="st-banner">
+        <span class="st-flag-lg">${FLAGS[s.id] || '🏳'}</span>
+        <span class="st-name">${s.name}</span>
+        <span class="st-gicon" data-tip-key="gov-${s.gov}">${GOV_ICONS[s.gov]}</span>
+      </div>
+      <div class="st-tags">
+        <span class="tag tag-eco-${s.econ==='capitalist'?'cap':'com'}" data-tip-key="eco-${s.econ}">${s.econ==='capitalist'?'CAP':'COM'}</span>
+        <span class="tag tag-cul-${s.cult==='secular'?'sec':'rel'}" data-tip-key="cul-${s.cult}">${s.cult==='secular'?'SEC':'REL'}</span>
+      </div>
+      <div class="st-stats">
+        <span class="ss" data-tip-key="stat-military"><span class="ssi">⚔</span>${s.military}</span>
+        <span class="ss" data-tip-key="stat-nuclear"><span class="ssi">☢</span>${s.nuclear}</span>
+        <span class="ss" data-tip-key="stat-patriotism"><span class="ssi">♥</span>${s.patriotism}</span>
+        <span class="ss" data-tip-key="stat-resources"><span class="ssi">💎</span>${s.resources}</span>
+      </div>
+      <div class="st-agents">
+        ${playerAgents.map(pi => {
+          const soc = SOCIETIES[G.players[pi].soc];
+          return `<div class="agent-meeple" data-agent-idx="${pi}" style="background:${soc.color}33;border-color:${soc.color}">🕵️</div>`;
+        }).join('')}
+      </div>
+    `;
+    // Set meeple tips dynamically
+    div.querySelectorAll('.agent-meeple[data-agent-idx]').forEach(el => {
+      const p = G.players[+el.dataset.agentIdx];
+      const soc = SOCIETIES[p.soc];
+      el.dataset.tip = `<b>${soc.icon} ${p.name}</b>${soc.name} — Agent stationed here`;
+    });
+    div.addEventListener('click', () => {
+      if (!G.pendingTarget && !G.agentMode && !G.burnMode) { showStatePopup(s.id); return; }
+      onStateClic(s.id);
+    });
+    grid.appendChild(div);
+  });
+}
+
+function renderHand() {
+  const p = cur();
+  document.getElementById('handLbl').textContent = `${p.name}'s Hand (${p.hand.length})`;
+  const container = document.getElementById('hCards');
+  const filtered = handTab==='all' ? p.hand : p.hand.filter(c=>c.type===handTab);
+  container.innerHTML = '';
+  filtered.forEach((card, visIdx) => {
+    const realIdx = p.hand.indexOf(card);
+    const canAfford = p.ip >= card.cost;
+    const div = document.createElement('div');
+    div.className = `card t${card.type[0]} ${!canAfford?'nope':''} ${G.selCardIdx===realIdx?'sel':''}`;
+    div.innerHTML = `
+      <span class="ccost">${card.cost}💠</span>
+      <span class="ctlbl">${card.type}</span>
+      <span class="cname">${card.name}</span>
+      <span class="cicon">${card.icon}</span>
+      <span class="cdesc">${card.desc}</span>
+    `;
+    div.dataset.tip = `<b>${card.name}</b>${card.cost} 💠 IP · ${card.type}<br>${card.desc}`;
+    div.addEventListener('click', () => showCardPopup(card, realIdx));
+    container.appendChild(div);
+  });
+}
+
+function renderVP() {
+  const list = document.getElementById('vpList');
+  list.innerHTML = G.players.map(p => {
+    const soc = SOCIETIES[p.soc];
+    const vp = calcVP(p);
+    const pct = Math.min(100, Math.round(vp/G.vpThresh*100));
+    return `<div class="vp-row" data-tip-key="soc-${soc.id}">
+      <div class="vp-dot" style="background:${soc.color}"></div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <span class="vp-nm">${soc.icon} ${p.name}</span>
+          <span class="vp-val" style="color:${soc.color}">${vp}</span>
+        </div>
+        <div style="font-size:.58rem;color:var(--dim)">${soc.vpDesc}</div>
+        <div class="vp-bar"><div class="vp-fill" style="width:${pct}%;background:${soc.color}"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderMeters() {
+  document.getElementById('tensionVal').textContent = G.tension;
+  document.getElementById('stabVal').textContent    = G.stability;
+  document.getElementById('tensionBar').style.width = (G.tension/10*100)+'%';
+  document.getElementById('stabBar').style.width    = (G.stability/10*100)+'%';
+}
+
+function renderTurnHeader() {
+  const p = cur();
+  const soc = SOCIETIES[p.soc];
+  const el = document.getElementById('tbTurn');
+  el.textContent = `${p.name} — ${soc.icon} ${soc.name}`;
+  el.style.background = soc.color+'33';
+  el.style.color = soc.color;
+  document.getElementById('roundLbl').textContent = `Round ${G.round}`;
+  document.getElementById('ipVal').textContent = p.ip;
+  const income = p.agents.length;
+  document.getElementById('ipIncome').textContent = `(+${income}/turn)`;
+
+  // Agent info
+  document.getElementById('agentInfo').textContent = `Agents: ${p.agents.length} active`;
+}
+
+// ═══════════════════════════════════════════════════════
+//  VP CALCULATION
+// ═══════════════════════════════════════════════════════
+function calcVP(player) {
+  const soc = SOCIETIES[player.soc];
+  return G.states.filter(s => soc.vpCheck(s)).length;
+}
+
+// ═══════════════════════════════════════════════════════
+//  TURN PHASES
+// ═══════════════════════════════════════════════════════
+function setPhase(ph) {
+  G.phase = ph;
+  document.getElementById('phaseLbl').textContent =
+    ph==='draw' ? 'Draw Phase' : ph==='action' ? 'Action Phase' : 'End Phase';
+  document.getElementById('bDraw').disabled = ph!=='draw' || G.drawn;
+  document.getElementById('bPlay').disabled = G.selCardIdx===null || ph==='draw';
+}
+
+function doDrawCard() {
+  if (G.drawn) return notify('Already drew this turn.');
+  const p = cur();
+  if (p.hand.length >= 8) return notify('Hand full (max 8).');
+  dealCard(p); dealCard(p); // draw 2
+  G.drawn = true;
+  logE(`${p.name} draws 2 cards.`);
+  setPhase('action');
+  renderHand();
+}
+
+// ═══════════════════════════════════════════════════════
+//  CARD SELECTION & TARGETING
+// ═══════════════════════════════════════════════════════
+function setHandTab(t) {
+  handTab = t;
+  ['all','political','military','cultural','economic'].forEach(id => {
+    const el = document.getElementById('ht'+id.charAt(0).toUpperCase()+id.slice(1,3));
+    if (el) el.classList.toggle('active', id===t);
+  });
+  document.getElementById('htAll').classList.toggle('active', t==='all');
+  renderHand();
+}
+
+function selectCard(idx) {
+  if (cur().isAI) return;
+  if (G.phase==='draw') { setPhase('action'); }
+  const p = cur();
+  if (p.ip < p.hand[idx].cost) return notify('Not enough IP to play that card.');
+  G.selCardIdx = G.selCardIdx===idx ? null : idx;
+  G.selCard    = G.selCardIdx!==null ? p.hand[G.selCardIdx] : null;
+  document.getElementById('bPlay').disabled = !G.selCard;
+  document.getElementById('bCancel').style.display = G.selCard ? '' : 'none';
+  G.pendingTarget = !!G.selCard;
+  G.agentMode = false;
+  document.getElementById('bAgent').style.display = 'none';
+  renderHand();
+  renderBoard();
+  if (G.selCard) notify('Select a target state on the board.');
+}
+
+function cancelSel() {
+  G.selCard = null; G.selCardIdx = null;
+  G.pendingTarget = false; G.agentMode = false; G.infiltrateFrom = null;
+  G.burnMode = null; G.burnCard = null; G.burnCardIdx = null; G.burnMoveFrom = null;
+  document.getElementById('bPlay').disabled = true;
+  document.getElementById('bCancel').style.display = 'none';
+  document.getElementById('bAgent').style.display = 'none';
+  renderHand();
+  renderBoard();
+}
+
+function toggleAgentMode() {
+  G.agentMode = !G.agentMode;
+  G.pendingTarget = G.agentMode;
+  G.selCard = null; G.selCardIdx = null;
+  renderBoard();
+  if (G.agentMode) notify('Select a state to place your agent (must be adjacent to existing agent).');
+  else renderAll();
+}
+
+function isValidTarget(sid) {
+  const p = cur();
+  // Burn-move highlighting
+  if (G.burnMode === 'move-from') return p.agents.includes(sid);
+  if (G.burnMode === 'move-to')   return isAdjacentTo(G.burnMoveFrom, sid);
+  if (!G.selCard) return false;
+  const card = G.selCard;
+  if (!card.needsAgent) return true; // can target any state
+  // Need agent on that state or adjacent to one with agent (for infiltrate/recruit)
+  if (card.effect === 'recruit') return isAdjacentToAgent(sid, p);
+  if (card.effect === 'infiltrate') {
+    if (G.infiltrateFrom) return isAdjacentTo(G.infiltrateFrom, sid);
+    return p.agents.includes(sid);
+  }
+  return p.agents.includes(sid);
+}
+
+function isAdjacentToAgent(sid, player) {
+  return player.agents.some(agSid => isAdjacentTo(agSid, sid));
+}
+
+function isAdjacentTo(sid1, sid2) {
+  if (sid1===sid2) return false;
+  const s1 = G.states.find(s=>s.id===sid1);
+  const s2 = G.states.find(s=>s.id===sid2);
+  if (!s1||!s2) return false;
+  return Math.abs(s1.col-s2.col)<=1 && Math.abs(s1.row-s2.row)<=1;
+}
+
+function onStateClic(sid) {
+  if (!G.pendingTarget && !G.agentMode) return;
+
+  // Burn-move: two-step agent relocation
+  if (G.burnMode === 'move-from') {
+    const p = cur();
+    if (!p.agents.includes(sid)) return notify('Select one of your agent states to move from.');
+    G.burnMoveFrom = sid;
+    G.burnMode = 'move-to';
+    notify(`Moving agent from ${getState(sid).name} — select an adjacent destination.`);
+    renderBoard();
+    return;
+  }
+  if (G.burnMode === 'move-to') {
+    const p = cur();
+    if (!isAdjacentTo(G.burnMoveFrom, sid)) return notify('Destination must be adjacent to the agent.');
+    const fromIdx = p.agents.indexOf(G.burnMoveFrom);
+    p.agents[fromIdx] = sid;
+    const card = G.burnCard;
+    p.hand.splice(G.burnCardIdx, 1);
+    p.discard.push(card);
+    logE(`${p.name} burns <strong>${card.name}</strong> — moves agent from ${getState(G.burnMoveFrom).name} to ${getState(sid).name}.`);
+    G.burnMode = null; G.burnCard = null; G.burnCardIdx = null; G.burnMoveFrom = null;
+    G.pendingTarget = false;
+    renderAll();
+    return;
+  }
+
+  if (G.agentMode) {
+    const p = cur();
+    if (p.agents.includes(sid)) return notify('Already have agent there.');
+    if (!isAdjacentToAgent(sid, p)) return notify('Must place agent adjacent to an existing agent.');
+    p.agents.push(sid);
+    p.ip -= 2;
+    logE(`${p.name} recruits an agent to ${getState(sid).name}.`);
+    G.agentMode = false; G.pendingTarget = false;
+    document.getElementById('bAgent').style.display = 'none';
+    renderAll();
+    return;
+  }
+
+  if (G.selCard) {
+    const card = G.selCard;
+
+    if (card.effect === 'infiltrate' && !G.infiltrateFrom) {
+      const p = cur();
+      if (!p.agents.includes(sid)) return notify('Select one of your agent states first.');
+      G.infiltrateFrom = sid;
+      notify('Now select where to move the agent to.');
+      renderBoard();
+      return;
+    }
+
+    if (!isValidTarget(sid)) return notify('Invalid target. Need your agent on that state.');
+    doPlayCard(sid);
+  }
+}
+
+function doPlayCard(targetSid) {
+  if (!G.selCard) return;
+  const p = cur();
+  if (p.ip < G.selCard.cost) return notify('Not enough IP.');
+
+  const card = { ...G.selCard };
+  p.ip -= card.cost;
+  p.hand.splice(G.selCardIdx, 1);
+  p.discard.push(card);
+
+  const state = targetSid ? getState(targetSid) : null;
+  applyEffect(card.effect, G.players.indexOf(p), targetSid);
+
+  logE(`${p.name} plays <strong>${card.name}</strong>${state ? ' on '+state.name : ''}.`);
+
+  G.selCard = null; G.selCardIdx = null;
+  G.pendingTarget = false; G.agentMode = false; G.infiltrateFrom = null;
+  document.getElementById('bPlay').disabled = true;
+  document.getElementById('bCancel').style.display = 'none';
+  renderAll();
+  checkEndConditions();
+}
+
+// ═══════════════════════════════════════════════════════
+//  CARD EFFECTS
+// ═══════════════════════════════════════════════════════
+const GOV_ORDER = ['provisional','monarchy','republic','dictatorship'];
+
+function applyEffect(effect, pIdx, sid) {
+  const p = G.players[pIdx];
+  const s = sid ? getState(sid) : null;
+
+  switch(effect) {
+    case 'gov_step':
+      if (s && !s.sp) {
+        const i = GOV_ORDER.indexOf(s.gov);
+        s.gov = GOV_ORDER[(i+1) % GOV_ORDER.length];
+      }
+      break;
+    case 'lobbying':
+      if (s) { s.gov = 'republic'; dealCard(p); }
+      break;
+    case 'assassinate':
+      if (s) { s.gov = 'provisional'; logE(`${s.name}'s government falls to Provisional.`); }
+      break;
+    case 'agitate':
+      if (s) {
+        const roll = Math.floor(Math.random()*4);
+        if (roll===0) { s.gov = GOV_ORDER[Math.floor(Math.random()*4)]; logE(`${s.name} undergoes political shift.`); }
+        else if (roll===1) { s.patriotism = Math.min(5, s.patriotism+1); }
+        else if (roll===2) { s.military = Math.max(0, s.military-1); }
+        else { s.resources = Math.max(0, s.resources-1); }
+      }
+      break;
+    case 'reform_gov':
+      if (s) { s.gov='republic'; s.patriotism=Math.min(5,s.patriotism+1); }
+      break;
+    case 'coup':
+      if (s) { s.gov='dictatorship'; s.military=Math.min(10,s.military+2); addTension(1); }
+      break;
+    case 'recruit':
+      if (sid && !p.agents.includes(sid)) p.agents.push(sid);
+      break;
+    case 'infiltrate':
+      if (G.infiltrateFrom && sid) {
+        p.agents = p.agents.filter(a=>a!==G.infiltrateFrom);
+        if (!p.agents.includes(sid)) p.agents.push(sid);
+        logE(`${p.name} moves agent from ${getState(G.infiltrateFrom).name} → ${getState(sid).name}.`);
+        G.infiltrateFrom = null;
+      }
+      break;
+    case 'add_nuclear':
+      if (s) { s.nuclear=Math.min(5,s.nuclear+1); addTension(2); }
+      break;
+    case 'build_nuclear':
+      if (s) { s.nuclear=Math.min(5,s.nuclear+2); addTension(3); }
+      break;
+    case 'add_military':
+      if (s) s.military=Math.min(10,s.military+3);
+      break;
+    case 'mutiny':
+      if (s) { s.military=Math.floor(s.military/2); s.gov='provisional'; addTension(1); }
+      break;
+    case 'disarm':
+      if (s) { s.nuclear=Math.max(0,s.nuclear-2); addTension(-2); }
+      break;
+    case 'revolution':
+      if (s) { s.gov='provisional'; s.patriotism=Math.min(5,s.patriotism+3); addTension(1); }
+      break;
+    case 'set_religious':
+      if (s) { s.cult='religious'; s.patriotism=Math.min(5,s.patriotism+2); }
+      break;
+    case 'set_secular':
+      if (s) { s.cult='secular'; s.patriotism=Math.min(5,s.patriotism+2); }
+      break;
+    case 'add_patriotism':
+      if (s) s.patriotism=Math.min(5,s.patriotism+3);
+      break;
+    case 'cult_exchange':
+      if (s) { s.patriotism=Math.min(5,s.patriotism+1); dealCard(p); }
+      break;
+    case 'set_capitalist':
+    case 'set_capitalist2':
+      if (s) { s.econ='capitalist'; if(effect==='set_capitalist') p.ip+=3; else s.resources=Math.min(5,s.resources+2); }
+      break;
+    case 'set_communist':
+      if (s) { s.econ='communist'; s.resources=Math.min(5,s.resources+2); }
+      break;
+    case 'sanctions':
+      if (s) {
+        s.resources=Math.max(0,s.resources-2);
+        G.players.forEach((op,i)=>{ if(i!==pIdx && op.agents.includes(sid)) op.ip=Math.max(0,op.ip-2); });
+      }
+      break;
+    case 'resource_dev':
+      if (s) { s.resources=Math.min(5,s.resources+3); p.ip+=2; }
+      break;
+  }
+}
+
+function addTension(n) {
+  G.tension = Math.max(0, Math.min(10, G.tension+n));
+  G.stability = Math.max(0, Math.min(10, G.stability + (n < 0 ? 1 : n > 2 ? -1 : 0)));
+}
+
+// ═══════════════════════════════════════════════════════
+//  END TURN
+// ═══════════════════════════════════════════════════════
+function doEndTurn() {
+  const p = cur();
+  const income = p.agents.length;
+  p.ip += income;
+  if (income > 0) logE(`${p.name} earns ${income} IP from ${income} agent${income>1?'s':''}.`);
+
+  // Stability naturally recovers slightly
+  if (Math.random() < 0.3) G.stability = Math.min(10, G.stability+1);
+
+  G.turn = (G.turn+1) % G.players.length;
+  if (G.turn===0) G.round++;
+  G.drawn = false; G.phase = 'draw';
+  G.selCard=null; G.selCardIdx=null; G.pendingTarget=false; G.agentMode=false; G.infiltrateFrom=null;
+  G.burnMode=null; G.burnCard=null; G.burnCardIdx=null; G.burnMoveFrom=null;
+  document.getElementById('bCancel').style.display='none';
+  document.getElementById('bAgent').style.display='none';
+
+  const next = cur();
+  logE(`— ${next.name}'s turn (Round ${G.round}) —`);
+  setPhase('draw');
+  renderAll();
+  checkEndConditions();
+  if (next.isAI && !checkEndConditions()) setTimeout(aiTurn, 700);
+}
+
+// ═══════════════════════════════════════════════════════
+//  END CONDITIONS
+// ═══════════════════════════════════════════════════════
+function checkEndConditions() {
+  // Nuclear holocaust
+  if (G.tension >= 10) {
+    showWorldEnd('☢ Nuclear Holocaust', 'The superpowers launched their arsenals. Civilization has ended. No one wins.', true);
+    return true;
+  }
+  // Societal collapse
+  if (G.stability <= 0) {
+    showWorldEnd('⚡ World Collapse', 'Global instability has spiraled out of control. All governments have fallen.', false);
+    return true;
+  }
+  // VP check
+  for (const p of G.players) {
+    const vp = calcVP(p);
+    if (vp >= G.vpThresh) { showWin(p, vp); return true; }
+  }
+  return false;
+}
+
+function showWorldEnd(title, desc, nuclear) {
+  document.getElementById('weTitle').textContent = title;
+  document.getElementById('weDesc').textContent  = desc;
+  const stats = G.players.map(p => {
+    const vp = calcVP(p); const soc = SOCIETIES[p.soc];
+    return `<div class="res-row"><div class="vp-dot" style="background:${soc.color}"></div>
+      <span style="flex:1">${soc.icon} ${p.name}</span>
+      <strong style="color:${soc.color}">${vp} VP</strong></div>`;
+  }).join('');
+  document.getElementById('weStats').innerHTML = `<div class="sw-lbl" style="margin-bottom:10px">Final Scores</div>${stats}`;
+  showScreen('worldend');
+}
+
+function showWin(winner, vp) {
+  const soc = SOCIETIES[winner.soc];
+  document.getElementById('winTitle').style.color = soc.color;
+  document.getElementById('winTitle').textContent = `${winner.name} Wins!`;
+  document.getElementById('winSub').textContent = `${soc.icon} ${soc.name} — ${soc.vpDesc}`;
+  const stats = G.players.map(p => {
+    const pv=calcVP(p); const ps=SOCIETIES[p.soc];
+    return `<div class="res-row"><div class="vp-dot" style="background:${ps.color}"></div>
+      <span style="flex:1">${ps.icon} ${p.name} (${ps.name})</span>
+      <strong style="color:${ps.color}">${pv} VP</strong></div>`;
+  }).join('');
+  document.getElementById('winStats').innerHTML = `<div class="sw-lbl" style="margin-bottom:10px">Final Scores</div>${stats}`;
+  showScreen('win');
+}
+
+// ═══════════════════════════════════════════════════════
+//  AI
+// ═══════════════════════════════════════════════════════
+function aiTurn() {
+  if (!cur().isAI) return;
+  const p = cur();
+  const soc = SOCIETIES[p.soc];
+
+  // Draw
+  if (!G.drawn) { dealCard(p); dealCard(p); G.drawn=true; }
+
+  // Find best card to play that advances VP condition
+  const playable = p.hand.map((c,i)=>({c,i})).filter(({c})=>p.ip>=c.cost);
+  if (playable.length > 0) {
+    playable.sort((a,b)=>b.c.cost-a.c.cost);
+    const {c,i} = playable[0];
+
+    // Find a good target state
+    let targetSid = null;
+    if (c.needsAgent) {
+      const agentStates = G.states.filter(s=>p.agents.includes(s.id));
+      // Prefer states that, when modified, satisfy our VP condition
+      const notVP = agentStates.filter(s=>!soc.vpCheck(s));
+      if (notVP.length) targetSid = notVP[0].id;
+      else if (agentStates.length) targetSid = agentStates[0].id;
+    } else {
+      // Recruit: place adjacent to an agent
+      const adjStates = G.states.filter(s=>!p.agents.includes(s.id) && isAdjacentToAgent(s.id,p));
+      if (adjStates.length) targetSid = adjStates[0].id;
+    }
+
+    if (targetSid || !c.needsAgent) {
+      p.ip -= c.cost;
+      p.hand.splice(i,1);
+      p.discard.push(c);
+      if (c.effect==='infiltrate') G.infiltrateFrom = p.agents[0];
+      applyEffect(c.effect, G.players.indexOf(p), targetSid);
+      logE(`${p.name} (AI) plays <strong>${c.name}</strong>${targetSid?' on '+getState(targetSid).name:''}.`);
+    }
+  }
+
+  setTimeout(() => doEndTurn(), 500);
+}
+
+// ═══════════════════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════════════════
+function cur() { return G.players[G.turn]; }
+function getState(id) { return G.states.find(s=>s.id===id); }
+
+function logE(msg) {
+  G.log.push(msg);
+  const el = document.getElementById('logScroll');
+  const p  = document.createElement('p');
+  p.innerHTML = msg;
+  el.appendChild(p);
+  el.scrollTop = el.scrollHeight;
+}
+
+let notifTimer = null;
+function notify(msg) {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.classList.add('show');
+  if (notifTimer) clearTimeout(notifTimer);
+  notifTimer = setTimeout(()=>el.classList.remove('show'), 2600);
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function resetGame() { showScreen('setup'); }
+
+// ═══════════════════════════════════════════════════════
+//  POPUPS
+// ═══════════════════════════════════════════════════════
+const GOV_NAMES  = {republic:'Republic', monarchy:'Monarchy', dictatorship:'Dictatorship', provisional:'Provisional Gov.'};
+const TYPE_COLORS = {political:'#4a90d9', military:'#e74c3c', cultural:'#f1c40f', economic:'#2ecc71'};
+const FLAGS = {
+  USA:'🇺🇸', FRA:'🇫🇷', GER:'🇩🇪', JPN:'🇯🇵', USSR:'🇷🇺',
+  CAN:'🇨🇦', ITA:'🇮🇹', TUR:'🇹🇷', IND:'🇮🇳', CUB:'🇨🇺',
+  MEX:'🇲🇽', EGY:'🇪🇬', IRN:'🇮🇷', PAK:'🇵🇰', NKO:'🇰🇵',
+  BRZ:'🇧🇷', NGA:'🇳🇬', SAU:'🇸🇦', IDN:'🇮🇩', VNM:'🇻🇳',
+  CHN:'🇨🇳', ARG:'🇦🇷', ZAF:'🇿🇦', AUS:'🇦🇺', UK:'🇬🇧',
+};
+
+function showPopup()  { document.getElementById('popupOverlay').classList.add('show'); }
+function closePopup() { document.getElementById('popupOverlay').classList.remove('show'); }
+function onOverlayClick(e) { if (e.target === document.getElementById('popupOverlay')) closePopup(); }
+
+function showStatePopup(sid) {
+  const s = getState(sid);
+  if (!s) return;
+  const agentPlayers  = G.players.filter(p => p.agents.includes(sid));
+  const vpSocieties   = Object.values(SOCIETIES).filter(soc => soc.vpCheck(s));
+
+  document.getElementById('popupContent').innerHTML = `
+    <div class="popup-title">${FLAGS[s.id]||'🏳'} ${s.name}${s.sp ? ' ⭐' : ''}</div>
+    <div class="popup-sub">${GOV_NAMES[s.gov]}${s.sp ? ' · SUPERPOWER' : ''}</div>
+
+    <div class="popup-attrs">
+      <div class="popup-attr">
+        <div class="popup-attr-lbl">Government</div>
+        <div class="popup-attr-val">${GOV_ICONS[s.gov]} ${GOV_NAMES[s.gov]}</div>
+      </div>
+      <div class="popup-attr">
+        <div class="popup-attr-lbl">Economy</div>
+        <div class="popup-attr-val" style="color:${s.econ==='capitalist'?'#f39c12':'#e74c3c'}">${s.econ==='capitalist'?'💹 Capitalist':'☭ Communist'}</div>
+      </div>
+      <div class="popup-attr">
+        <div class="popup-attr-lbl">Culture</div>
+        <div class="popup-attr-val" style="color:${s.cult==='secular'?'#3498db':'#9b59b6'}">${s.cult==='secular'?'🔬 Secular':'✝ Religious'}</div>
+      </div>
+    </div>
+
+    <div class="popup-stats">
+      <div class="popup-stat-row">
+        <span class="popup-stat-lbl">⚔ Military</span>
+        <div class="popup-stat-bar"><div class="popup-stat-fill" style="width:${s.military/10*100}%;background:#e74c3c"></div></div>
+        <span class="popup-stat-num" style="color:#e74c3c">${s.military}</span>
+      </div>
+      <div class="popup-stat-row">
+        <span class="popup-stat-lbl">☢ Nuclear</span>
+        <div class="popup-stat-bar"><div class="popup-stat-fill" style="width:${s.nuclear/5*100}%;background:#f39c12"></div></div>
+        <span class="popup-stat-num" style="color:#f39c12">${s.nuclear}</span>
+      </div>
+      <div class="popup-stat-row">
+        <span class="popup-stat-lbl">♥ Patriotism</span>
+        <div class="popup-stat-bar"><div class="popup-stat-fill" style="width:${s.patriotism/5*100}%;background:#9b59b6"></div></div>
+        <span class="popup-stat-num" style="color:#9b59b6">${s.patriotism}</span>
+      </div>
+      <div class="popup-stat-row">
+        <span class="popup-stat-lbl">💎 Resources</span>
+        <div class="popup-stat-bar"><div class="popup-stat-fill" style="width:${s.resources/5*100}%;background:#2ecc71"></div></div>
+        <span class="popup-stat-num" style="color:#2ecc71">${s.resources}</span>
+      </div>
+    </div>
+
+    <div class="popup-section">
+      <div class="popup-section-lbl">Scores VP For</div>
+      <div class="popup-vp-chips">
+        ${vpSocieties.length
+          ? vpSocieties.map(soc => `<span class="popup-vp-chip" style="background:${soc.color}22;color:${soc.color};border:1px solid ${soc.color}44">${soc.icon} ${soc.name}</span>`).join('')
+          : '<span style="color:var(--dim);font-size:.75rem">No society currently scores this state</span>'}
+      </div>
+    </div>
+
+    ${agentPlayers.length ? `
+    <div class="popup-section">
+      <div class="popup-section-lbl">Agents Present</div>
+      <div class="popup-agents">
+        ${agentPlayers.map(p => {
+          const soc = SOCIETIES[p.soc];
+          return `<span class="popup-agent-chip" style="color:${soc.color};border:1px solid ${soc.color}44">${soc.icon} ${p.name}</span>`;
+        }).join('')}
+      </div>
+    </div>` : ''}
+  `;
+  showPopup();
+}
+
+function showCardPopup(card, idx) {
+  const tc = TYPE_COLORS[card.type] || '#aaa';
+  const p = cur();
+  const canAfford = p.ip >= card.cost;
+  const hasAgents = p.agents.length > 0;
+  document.getElementById('popupContent').innerHTML = `
+    <div class="popup-card-type" style="color:${tc}">${card.type.toUpperCase()}</div>
+    <div class="popup-title">${card.name}</div>
+    <div class="popup-card-icon">${card.icon}</div>
+    <span class="popup-card-cost">${card.cost} 💠 IP</span>
+    <div class="popup-card-desc">${card.desc}</div>
+    ${card.needsAgent ? '<div class="popup-card-note">⚠ Requires your Agent on the target state</div>' : ''}
+    <button class="popup-play-btn" style="background:linear-gradient(135deg,${tc},${tc}99)"
+      ${canAfford ? '' : 'disabled style="opacity:.4;cursor:not-allowed"'}
+      onclick="selectCardFromPopup(${idx})">
+      ${canAfford ? 'Select to Play' : 'Not Enough IP'}
+    </button>
+    <div class="popup-burn-section">
+      <div class="popup-burn-lbl" data-tip="<b>🔥 Burn for Action</b>Discard this card without using its effect in exchange for a simple action. Useful when a card's effect isn\'t helpful this turn.">🔥 Burn for a Basic Action</div>
+      <div class="popup-burn-btns">
+        <button class="popup-burn-btn" ${hasAgents?'':'disabled style="opacity:.35;cursor:not-allowed"'}
+          onclick="burnCard(${idx},'move')" data-tip="<b>Move Agent</b>Discard this card to relocate one of your agents to any adjacent state — no IP cost.">🚶 Move Agent</button>
+        <button class="popup-burn-btn" onclick="burnCard(${idx},'ip')"
+          data-tip="<b>+2 IP</b>Discard this card to immediately gain 2 Influence Points.">💠 +2 IP</button>
+        <button class="popup-burn-btn" onclick="burnCard(${idx},'draw')"
+          data-tip="<b>Draw a Card</b>Discard this card to draw 1 new card from your deck.">🃏 Draw Card</button>
+      </div>
+    </div>
+  `;
+  showPopup();
+}
+
+function selectCardFromPopup(idx) {
+  closePopup();
+  selectCard(idx);
+}
+
+function burnCard(idx, action) {
+  closePopup();
+  const p = cur();
+  const card = p.hand[idx];
+  if (!card) return;
+  if (G.phase === 'draw') setPhase('action');
+
+  if (action === 'ip') {
+    p.hand.splice(idx, 1);
+    p.discard.push(card);
+    p.ip += 2;
+    logE(`${p.name} burns <strong>${card.name}</strong> for +2 IP.`);
+    renderAll();
+
+  } else if (action === 'draw') {
+    p.hand.splice(idx, 1);
+    p.discard.push(card);
+    if (!p.deck.length) { p.deck = shuffle([...p.discard]); p.discard = []; }
+    if (p.deck.length) { p.hand.push(p.deck.pop()); }
+    logE(`${p.name} burns <strong>${card.name}</strong> to draw a card.`);
+    renderAll();
+
+  } else if (action === 'move') {
+    G.burnCard    = card;
+    G.burnCardIdx = idx;
+    G.burnMode    = 'move-from';
+    G.pendingTarget = true;
+    notify('Burn: click one of your agents to move it.');
+    renderBoard();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  RULES REFERENCE
+// ═══════════════════════════════════════════════════════
+let rulesTab = 'play';
+
+function showRules() {
+  switchRulesTab(rulesTab);
+  document.getElementById('rulesOverlay').classList.add('show');
+}
+function closeRules() {
+  document.getElementById('rulesOverlay').classList.remove('show');
+}
+function onRulesOverlayClick(e) {
+  if (e.target === document.getElementById('rulesOverlay')) closeRules();
+}
+
+function switchRulesTab(tab) {
+  rulesTab = tab;
+  const tabs = [
+    {id:'play',      label:'How to Play'},
+    {id:'societies', label:'Societies'},
+    {id:'cards',     label:'Card List'},
+  ];
+  document.getElementById('rulesTabs').innerHTML = tabs.map(t =>
+    `<button class="rules-tab ${tab===t.id?'active':''}" onclick="switchRulesTab('${t.id}')">${t.label}</button>`
+  ).join('');
+  const body = document.getElementById('rulesBody');
+  if (tab === 'play')      body.innerHTML = rulesPlay();
+  if (tab === 'societies') body.innerHTML = rulesSocieties();
+  if (tab === 'cards')     body.innerHTML = rulesCards();
+}
+
+function rulesPlay() {
+  const thresh = (G && G.vpThresh) ? G.vpThresh : vpThresh;
+  return `
+  <div class="r-flavour">
+    <div class="r-flavour-quote">
+      "The bombs haven't dropped. Not yet. But in the smoke-filled back rooms of power, something far more dangerous is already underway."
+    </div>
+    <p>
+      The year could be any year. The setting: everywhere that matters.
+      Five ancient Secret Societies have watched empires rise and crumble for centuries —
+      and each believes <em>their</em> ideology is the one that saves humanity. Or at least runs it more efficiently.
+    </p>
+    <p>
+      The <b>Technocrats</b> want enlightened republics humming with secular reason.
+      The <b>Theocrats</b> prefer the iron certainty of God and a strongman.
+      The <b>Plutocrats</b> just want capitalism and a few warheads for insurance.
+      The <b>Stratocrats</b> believe communist discipline and a large army solves everything.
+      And the <b>Anarchists</b>… well, they mostly want to watch the others fail.
+    </p>
+    <p>
+      Your agents slip across borders. Your cards reshape governments.
+      Your influence quietly bends the world — one coup, one cultural exchange, one carefully placed spy at a time.
+    </p>
+    <p>
+      Just try not to end the world while you're at it. The nuclear clock is ticking.
+    </p>
+  </div>
+
+  <div class="r-sec">
+    <div class="r-sec-lbl">Objective</div>
+    <div class="r-row"><div class="r-icon">🏆</div><div class="r-text">Be the first Secret Society to reach <b>${thresh} Victory Points</b>. VP is earned by controlling states that match your society's ideology.</div></div>
+  </div>
+
+  <div class="r-sec">
+    <div class="r-sec-lbl">Turn Structure</div>
+    <div class="r-row"><div class="r-icon">1️⃣</div><div class="r-text"><b>Draw Phase</b> — Draw 2 cards from your deck. You may only draw once per turn. When your deck is empty it auto-shuffles your discard pile.</div></div>
+    <div class="r-row"><div class="r-icon">2️⃣</div><div class="r-text"><b>Action Phase</b> — Play cards, deploy agents, or burn cards for basic actions. You may take multiple actions as long as you have IP.</div></div>
+    <div class="r-row"><div class="r-icon">3️⃣</div><div class="r-text"><b>End Turn</b> — Collect income: <b>+1 IP per active agent</b>. World Stability may tick up slightly.</div></div>
+  </div>
+
+  <div class="r-sec">
+    <div class="r-sec-lbl">Influence Points (IP) 💠</div>
+    <div class="r-row"><div class="r-icon">💠</div><div class="r-text">The currency for playing cards. Each player starts with <b>8 IP</b>. Earn +1 IP per agent per turn. Some cards also generate IP.</div></div>
+  </div>
+
+  <div class="r-sec">
+    <div class="r-sec-lbl">Agents 🕵️</div>
+    <div class="r-row"><div class="r-icon">🕵️</div><div class="r-text"><b>Stationed on states</b> — generate +1 IP/turn each and are required to play most cards on that state.</div></div>
+    <div class="r-row"><div class="r-icon">➕</div><div class="r-text"><b>Place Agent</b> — costs <b>2 IP</b>. New agent must be placed adjacent (grid neighbor) to one of your existing agents.</div></div>
+    <div class="r-row"><div class="r-icon">🚶</div><div class="r-text"><b>Move Agent</b> — use the <em>Infiltrate</em> card, or burn any card for the Move Agent action (free, no IP cost).</div></div>
+  </div>
+
+  <div class="r-sec">
+    <div class="r-sec-lbl">Burning Cards 🔥</div>
+    <div class="r-row"><div class="r-icon">🔥</div><div class="r-text">Any card can be <b>burned</b> (discarded without using its effect) in exchange for one basic action:</div></div>
+    <div class="r-row"><div class="r-icon">🚶</div><div class="r-text"><b>Move Agent</b> — relocate one of your agents to any adjacent state. No IP cost.</div></div>
+    <div class="r-row"><div class="r-icon">💠</div><div class="r-text"><b>+2 IP</b> — gain 2 Influence Points immediately.</div></div>
+    <div class="r-row"><div class="r-icon">🃏</div><div class="r-text"><b>Draw 1 Card</b> — draw one new card from your deck.</div></div>
+  </div>
+
+  <div class="r-sec">
+    <div class="r-sec-lbl">State Attributes</div>
+    <div class="r-row"><div class="r-icon">🗳</div><div class="r-text"><b>Government:</b> Republic · Monarchy · Dictatorship · Provisional. Determines which societies score VP here.</div></div>
+    <div class="r-row"><div class="r-icon">💹</div><div class="r-text"><b>Economy:</b> Capitalist or Communist. Affects VP scoring and resource sharing between allied states.</div></div>
+    <div class="r-row"><div class="r-icon">✝</div><div class="r-text"><b>Culture:</b> Secular or Religious. Used in VP conditions and can be flipped with cultural cards.</div></div>
+    <div class="r-row"><div class="r-icon">⚔</div><div class="r-text"><b>Military (0–10):</b> Conventional forces. Required for Stratocrat VP and certain card effects.</div></div>
+    <div class="r-row"><div class="r-icon">☢</div><div class="r-text"><b>Nuclear (0–5):</b> Deterrence stockpile. Raises Global Tension. Plutocrats score VP from armed capitalist states.</div></div>
+    <div class="r-row"><div class="r-icon">♥</div><div class="r-text"><b>Patriotism (0–10):</b> Cultural strength. Required for Technocrat, Theocrat, and Anarchist VP.</div></div>
+    <div class="r-row"><div class="r-icon">💎</div><div class="r-text"><b>Resources (0–10):</b> Economic output. Not directly tied to VP, but some cards generate IP from high-resource states.</div></div>
+  </div>
+
+  <div class="r-sec">
+    <div class="r-sec-lbl">Global Danger Meters</div>
+    <div class="r-danger-bar"><span style="font-size:.8rem;width:1.2rem">☢</span><div class="r-danger-fill" style="background:#e74c3c;width:60%"></div><div class="r-text" style="flex:none"><b>Nuclear Tension</b> (0–10)</div></div>
+    <div class="r-row"><div class="r-icon"></div><div class="r-text">Raised by military and nuclear cards. If it hits <b>10</b>, nuclear holocaust occurs — <b>all players lose immediately</b>.</div></div>
+    <div class="r-danger-bar" style="margin-top:.6rem"><span style="font-size:.8rem;width:1.2rem">🌍</span><div class="r-danger-fill" style="background:#2ecc71;width:80%"></div><div class="r-text" style="flex:none"><b>World Stability</b> (10–0)</div></div>
+    <div class="r-row"><div class="r-icon"></div><div class="r-text">Degraded by coups, revolutions, and chaos. If it hits <b>0</b>, societal collapse ends the game — highest VP wins.</div></div>
+  </div>
+  `;
+}
+
+function rulesSocieties() {
+  const socOrder = ['TCH','THE','PLU','STR','ANA'];
+  return socOrder.map(id => {
+    const s = SOCIETIES[id];
+    return `
+    <div class="r-soc-card" style="border-color:${s.color}44">
+      <div class="r-soc-name" style="color:${s.color}">${s.icon} ${s.name}</div>
+      <div class="r-soc-vp">${s.vpDesc}</div>
+      <div style="margin-top:.45rem;font-size:.65rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px;">VP Condition</div>
+      <div style="font-size:.72rem;color:#ccc;margin-top:.2rem;font-family:monospace;background:rgba(255,255,255,.04);padding:.35rem .5rem;border-radius:.3rem;">${vpConditionText(id)}</div>
+    </div>`;
+  }).join('');
+}
+
+function vpConditionText(id) {
+  const map = {
+    TCH: 'Government = Republic  AND  Culture = Secular  AND  Patriotism > 0',
+    THE: 'Government = Dictatorship  AND  Culture = Religious  AND  Patriotism > 0',
+    PLU: 'Economy = Capitalist  AND  Nuclear > 0',
+    STR: 'Economy = Communist  AND  Military ≥ 3',
+    ANA: 'Government = Provisional  AND  Patriotism > 0',
+  };
+  return map[id] || '—';
+}
+
+function rulesCards() {
+  const types = ['political','military','cultural','economic'];
+  const TC = { political:'#9b59b6', military:'#e74c3c', cultural:'#1abc9c', economic:'#f39c12' };
+  return types.map(type => {
+    const cards = CARD_POOL.filter(c => c.type === type);
+    // De-dupe by id
+    const seen = new Set();
+    const unique = cards.filter(c => { if (seen.has(c.id)) return false; seen.add(c.id); return true; });
+    return `
+    <div class="r-sec">
+      <div class="r-sec-lbl" style="color:${TC[type]}">${type.toUpperCase()} CARDS</div>
+      <div class="r-2col">
+        ${unique.map(c => `
+        <div class="r-card-block">
+          <div class="r-card-name">${c.icon} ${c.name}</div>
+          <div class="r-card-meta" style="color:${TC[type]}">${c.cost} 💠 IP${c.needsAgent ? ' · Agent required' : ''}</div>
+          <div class="r-card-desc">${c.desc}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+//  TOOLTIP ENGINE
+// ═══════════════════════════════════════════════════════
+const TIPS = {
+  'gov-republic':      '<b>Republic</b>Democratic government. Replaced every 4 cycles. High patriotism enables popular revolt. <em>Technocrats</em> score VP here.',
+  'gov-monarchy':      '<b>Monarchy</b>Hereditary rule. Head of State never replaced, even by assassination. Stable but rigid.',
+  'gov-dictatorship':  '<b>Dictatorship</b>Authoritarian rule. Only replaced by force. Hard to reform. <em>Theocrats</em> score VP here.',
+  'gov-provisional':   '<b>Provisional Gov.</b>Unstable transition state. Cycles leadership every round. <em>Anarchists</em> score VP here.',
+  'eco-capitalist':    '<b>Capitalist Economy</b>Market-driven. Capitalist states share military strength with allies. <em>Plutocrats</em> score VP from capitalist states with any nukes.',
+  'eco-communist':     '<b>Communist Economy</b>State-controlled. Communist states can share resources without a formal alliance. <em>Stratocrats</em> score VP from communist states with Military ≥ 3.',
+  'cul-secular':       '<b>Secular Culture</b>Science and reason over faith. <em>Technocrats</em> favor secular republics with patriotism.',
+  'cul-religious':     '<b>Religious Culture</b>Faith-driven society. <em>Theocrats</em> favor religious dictatorships with patriotism.',
+  'stat-military':     '<b>⚔ Conventional Military</b>Used in coups and conventional wars. <em>Stratocrats</em> need Military ≥ 3 in communist states to score VP.',
+  'stat-nuclear':      '<b>☢ Nuclear Stockpile</b>Provides deterrence. <em>Plutocrats</em> score VP from capitalist states with any nukes. Every nuclear card raises Global Tension.',
+  'stat-patriotism':   '<b>♥ Patriotism</b>Cultural strength of the population. Required for <em>Technocrat</em> and <em>Theocrat</em> VP. High patriotism can trigger popular revolts against dictatorships.',
+  'stat-resources':    '<b>💎 Resources</b>Economic output of the state. States generate +1 IP per agent per turn for their player.',
+  'tension':           '<b>Nuclear Tension (0–10)</b>Raised by military and nuclear cards. <em>Reaches 10: nuclear holocaust — all players lose immediately.</em>',
+  'stability':         '<b>World Stability (10–0)</b>Degraded by coups, revolutions, and destabilising actions. <em>Reaches 0: societal collapse — game ends.</em>',
+  'btn-draw':          '<b>Draw Card</b>Draw 2 cards from your deck. You can only draw once per turn.',
+  'btn-play':          '<b>Play Card</b>Play the selected card, then click a valid target state on the board.',
+  'btn-cancel':        '<b>Cancel</b>Cancel the current card selection or agent placement.',
+  'btn-agent':         '<b>Place Agent</b>Spend 2 IP to deploy a new agent on any state adjacent to one you already occupy.',
+  'btn-end':           '<b>End Turn</b>End your turn and collect income: +1 IP per active agent.',
+  'ip':                '<b>Influence Points</b>Your currency for playing cards. Earned each turn from your active agents (+1 per agent).',
+  'tab-all':           '<b>All Cards</b>Show your full hand.',
+  'tab-political':     '<b>Political Cards</b>Change government types, recruit agents, assassinate heads of state, influence political agendas.',
+  'tab-military':      '<b>Military Cards</b>Build arms, threaten nuclear war, stage coups. ⚠ Raises Global Tension.',
+  'tab-cultural':      '<b>Cultural Cards</b>Change culture, build patriotism, incite revolutions, secularize or evangelize states.',
+  'tab-economic':      '<b>Economic Cards</b>Shift economies between capitalist and communist, manage resources, apply sanctions.',
+  'soc-TCH': '<b>🔬 Technocrats</b>Score 1 VP per state that is: Republic + Secular culture + any Patriotism. Use political and cultural cards to shape republics.',
+  'soc-THE': '<b>✝ Theocrats</b>Score 1 VP per state that is: Dictatorship + Religious culture + any Patriotism. Spread faith and authoritarian rule.',
+  'soc-PLU': '<b>💰 Plutocrats</b>Score 1 VP per Capitalist state with any Nuclear stockpile. Build nukes in capitalist nations.',
+  'soc-STR': '<b>⚔ Stratocrats</b>Score 1 VP per Communist state with Military ≥ 3. Arm communist states to dominate.',
+  'soc-ANA': '<b>🏴 Anarchists</b>Score 1 VP per Provisional government with any Patriotism. Incite revolutions and keep states destabilised.',
+  'btn-settings': '<b>Settings</b>Adjust text size and display options.',
+};
+
+(function initTooltip() {
+  const tt = document.getElementById('tt');
+  document.addEventListener('mousemove', e => {
+    // Keep tooltip inside viewport
+    const x = e.clientX + 16, y = e.clientY + 16;
+    tt.style.left = (x + 270 > window.innerWidth  ? e.clientX - 270 : x) + 'px';
+    tt.style.top  = (y + 120 > window.innerHeight ? e.clientY - 120 : y) + 'px';
+  });
+  document.addEventListener('mouseover', e => {
+    const el = e.target.closest('[data-tip],[data-tip-key]');
+    if (el) {
+      const text = el.dataset.tip || TIPS[el.dataset.tipKey] || '';
+      if (text) { tt.innerHTML = text; tt.style.display = 'block'; return; }
+    }
+    tt.style.display = 'none';
+  });
+  document.addEventListener('mouseleave', () => { tt.style.display = 'none'; });
+})();
+
+// ═══════════════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════════════
+const TEXT_SIZES = [
+  { label:'Small',  px:11 },
+  { label:'Medium', px:13 },
+  { label:'Large',  px:15 },
+  { label:'XL',     px:17 },
+  { label:'XXL',    px:20 },
+];
+let currentSizeIdx = 1; // default Medium
+
+function toggleSettings() {
+  const p = document.getElementById('settingsPanel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+function applyTextSize(idx) {
+  currentSizeIdx = Math.max(0, Math.min(TEXT_SIZES.length - 1, idx));
+  const s = TEXT_SIZES[currentSizeIdx];
+  document.documentElement.style.fontSize = s.px + 'px';
+  document.getElementById('textSizeLbl').textContent = s.label;
+  document.getElementById('textSizePx').textContent  = s.px + 'px';
+  // Highlight active preset button
+  document.querySelectorAll('#settingsPanel button[onclick^="setTextSize"]').forEach((btn, i) => {
+    btn.style.borderColor = i === currentSizeIdx ? '#888' : 'var(--border)';
+    btn.style.color       = i === currentSizeIdx ? '#fff' : 'var(--dim)';
+  });
+}
+
+function setTextSize(idx)     { applyTextSize(idx); }
+function changeTextSize(dir)  { applyTextSize(currentSizeIdx + dir); }
+
+// Close settings when clicking outside
+document.addEventListener('click', e => {
+  const panel = document.getElementById('settingsPanel');
+  const btn   = document.getElementById('settingsBtn');
+  if (panel && btn && !panel.contains(e.target) && e.target !== btn) {
+    panel.style.display = 'none';
+  }
+});
+
+// ── Init
+initSetup();
+applyTextSize(1); // default Medium
+</script>
+</body>
+</html>

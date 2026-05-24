@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GTNW — Rules Reference</title>
+<style>
+  :root {
+    --bg:     #0d0d1a;
+    --panel:  #13132a;
+    --border: #2e2e50;
+    --text:   #e0e0f0;
+    --dim:    #7070a0;
+    --blue:   #3498db;
+    --purple: #9b59b6;
+    --green:  #1abc9c;
+    --orange: #f39c12;
+    --red:    #e74c3c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 2rem 1rem 4rem;
+  }
+
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.2rem;
+    margin-bottom: 2.5rem;
+  }
+  .site-logo {
+    font-size: 1.6rem;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: #fff;
+    text-transform: uppercase;
+  }
+  .site-sub {
+    font-size: 0.75rem;
+    color: var(--dim);
+    letter-spacing: 3px;
+    font-style: italic;
+  }
+
+  /* ── SECTION HEADERS ── */
+  .chapter {
+    margin-bottom: 3rem;
+  }
+  .chapter-title {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--blue);
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .sec-label {
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--dim);
+    margin: 1.4rem 0 0.6rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid #1e1e35;
+  }
+
+  /* ── FLAVOUR BOX ── */
+  .flavour {
+    background: linear-gradient(135deg, rgba(52,152,219,.08), rgba(155,89,182,.08));
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 0.6rem;
+    padding: 1.1rem 1.2rem 1.2rem;
+    margin-bottom: 2rem;
+  }
+  .flavour-quote {
+    font-style: italic;
+    color: #aaa;
+    border-left: 3px solid var(--blue);
+    padding-left: 0.8rem;
+    margin-bottom: 1rem;
+    font-size: 0.88rem;
+    line-height: 1.65;
+  }
+  .flavour p {
+    font-size: 0.82rem;
+    color: #c5c5d8;
+    line-height: 1.7;
+    margin-bottom: 0.6rem;
+  }
+  .flavour p:last-child { margin-bottom: 0; }
+  .flavour b { color: #fff; }
+
+  /* ── RULE ROWS ── */
+  .r-row {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+  }
+  .r-icon {
+    font-size: 1rem;
+    width: 1.5rem;
+    flex-shrink: 0;
+    text-align: center;
+    padding-top: 0.05rem;
+  }
+  .r-text {
+    font-size: 0.82rem;
+    color: #ccc;
+    line-height: 1.6;
+  }
+  .r-text b { color: #fff; }
+  .r-text em { color: #aaa; }
+
+  /* ── DANGER BARS ── */
+  .danger-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.7rem;
+  }
+  .danger-bar {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+  }
+  .danger-label {
+    font-size: 0.78rem;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+
+  /* ── SOCIETIES ── */
+  .soc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+  @media (max-width: 560px) { .soc-grid { grid-template-columns: 1fr; } }
+  .soc-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 0.6rem;
+    padding: 0.85rem 1rem;
+  }
+  .soc-name {
+    font-size: 1rem;
+    font-weight: 900;
+    margin-bottom: 0.25rem;
+  }
+  .soc-desc {
+    font-size: 0.75rem;
+    color: #bbb;
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
+  }
+  .soc-cond-label {
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--dim);
+    margin-bottom: 0.2rem;
+  }
+  .soc-cond {
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    background: rgba(255,255,255,.04);
+    border-radius: 0.3rem;
+    padding: 0.3rem 0.5rem;
+    color: #ddd;
+    line-height: 1.5;
+  }
+
+  /* ── CARD LIST ── */
+  .card-type-header {
+    font-size: 0.62rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 1.6rem 0 0.7rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.55rem;
+  }
+  @media (max-width: 560px) { .card-grid { grid-template-columns: 1fr; } }
+  .card-block {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 0.65rem 0.8rem;
+  }
+  .card-name {
+    font-size: 0.82rem;
+    font-weight: bold;
+    margin-bottom: 0.15rem;
+  }
+  .card-meta {
+    font-size: 0.62rem;
+    margin-bottom: 0.3rem;
+  }
+  .card-desc {
+    font-size: 0.74rem;
+    color: #bbb;
+    line-height: 1.5;
+  }
+
+  /* ── BURN BOX ── */
+  .burn-box {
+    background: rgba(243,156,18,.06);
+    border: 1px solid rgba(243,156,18,.22);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-top: 0.5rem;
+  }
+  .burn-title {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--orange);
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.65rem;
+    color: var(--dim);
+    text-align: center;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="site-header">
+    <div class="site-logo">GTNW</div>
+    <div class="site-sub">"Would you like to play a game?" — Rules Reference</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- STORY / FLAVOUR                           -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="flavour">
+    <div class="flavour-quote">
+      "The bombs haven't dropped. Not yet. But in the smoke-filled back rooms of power, something far more dangerous is already underway."
+    </div>
+    <p>
+      The year could be any year. The setting: everywhere that matters.
+      Five ancient Secret Societies have watched empires rise and crumble for centuries —
+      and each believes <em>their</em> ideology is the one that saves humanity. Or at least runs it more efficiently.
+    </p>
+    <p>
+      The <b>Technocrats</b> want enlightened republics humming with secular reason.
+      The <b>Theocrats</b> prefer the iron certainty of God and a strongman.
+      The <b>Plutocrats</b> just want capitalism and a few warheads for insurance.
+      The <b>Stratocrats</b> believe communist discipline and a large army solves everything.
+      And the <b>Anarchists</b>… well, they mostly want to watch the others fail.
+    </p>
+    <p>
+      Your agents slip across borders. Your cards reshape governments.
+      Your influence quietly bends the world — one coup, one cultural exchange, one carefully placed spy at a time.
+    </p>
+    <p>Just try not to end the world while you're at it. The nuclear clock is ticking.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- HOW TO PLAY                               -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="chapter">
+    <div class="chapter-title">How to Play</div>
+
+    <div class="sec-label">Objective</div>
+    <div class="r-row">
+      <div class="r-icon">🏆</div>
+      <div class="r-text">Be the first Secret Society to reach <b>13 Victory Points</b> (configurable). VP is earned by controlling states that match your society's ideology — the more aligned states you dominate, the faster you win.</div>
+    </div>
+
+    <div class="sec-label">Turn Structure</div>
+    <div class="r-row"><div class="r-icon">1️⃣</div><div class="r-text"><b>Draw Phase</b> — Draw 2 cards from your deck. You may only draw once per turn. When your deck is empty it auto-shuffles your discard pile.</div></div>
+    <div class="r-row"><div class="r-icon">2️⃣</div><div class="r-text"><b>Action Phase</b> — Play cards, deploy agents, or burn cards for basic actions. You may take multiple actions as long as you have IP.</div></div>
+    <div class="r-row"><div class="r-icon">3️⃣</div><div class="r-text"><b>End Turn</b> — Collect income: <b>+1 IP per active agent</b>. World Stability may recover slightly.</div></div>
+
+    <div class="sec-label">Influence Points (IP) 💠</div>
+    <div class="r-row"><div class="r-icon">💠</div><div class="r-text">Your currency for playing cards. Each player starts with <b>8 IP</b>. Earn +1 IP per agent per turn. Some cards also generate IP directly.</div></div>
+
+    <div class="sec-label">Agents 🕵️</div>
+    <div class="r-row"><div class="r-icon">🕵️</div><div class="r-text"><b>Stationed on states</b> — generate +1 IP/turn each and are required to play most cards on that state.</div></div>
+    <div class="r-row"><div class="r-icon">➕</div><div class="r-text"><b>Place Agent</b> — costs <b>2 IP</b>. New agent must be placed adjacent (grid neighbor) to one of your existing agents.</div></div>
+    <div class="r-row"><div class="r-icon">🚶</div><div class="r-text"><b>Move Agent</b> — use the <em>Infiltrate</em> card, or burn any card for the Move Agent action (free, no IP cost).</div></div>
+
+    <div class="sec-label">Burning Cards 🔥</div>
+    <div class="r-row"><div class="r-icon">🔥</div><div class="r-text">Any card can be <b>burned</b> (discarded without using its stated effect) in exchange for one of three basic actions:</div></div>
+    <div class="burn-box">
+      <div class="burn-title">🔥 Burn for a Basic Action</div>
+      <div class="r-row"><div class="r-icon">🚶</div><div class="r-text"><b>Move Agent</b> — relocate one of your agents to any adjacent state. No IP cost.</div></div>
+      <div class="r-row"><div class="r-icon">💠</div><div class="r-text"><b>+2 IP</b> — gain 2 Influence Points immediately.</div></div>
+      <div class="r-row"><div class="r-icon">🃏</div><div class="r-text"><b>Draw 1 Card</b> — draw one new card from your deck.</div></div>
+    </div>
+
+    <div class="sec-label">State Attributes</div>
+    <div class="r-row"><div class="r-icon">🗳</div><div class="r-text"><b>Government:</b> Republic · Monarchy · Dictatorship · Provisional. Determines which societies score VP here.</div></div>
+    <div class="r-row"><div class="r-icon">💹</div><div class="r-text"><b>Economy:</b> Capitalist or Communist. Affects VP scoring and resource sharing between allied states.</div></div>
+    <div class="r-row"><div class="r-icon">✝</div><div class="r-text"><b>Culture:</b> Secular or Religious. Used in VP conditions and flipped with cultural cards.</div></div>
+    <div class="r-row"><div class="r-icon">⚔</div><div class="r-text"><b>Military (0–10):</b> Conventional forces. Required for Stratocrat VP and coup/mutiny effects.</div></div>
+    <div class="r-row"><div class="r-icon">☢</div><div class="r-text"><b>Nuclear (0–5):</b> Deterrence stockpile. Raises Global Tension. Plutocrats score VP from armed capitalist states.</div></div>
+    <div class="r-row"><div class="r-icon">♥</div><div class="r-text"><b>Patriotism (0–10):</b> Cultural strength. Required for Technocrat, Theocrat, and Anarchist VP.</div></div>
+    <div class="r-row"><div class="r-icon">💎</div><div class="r-text"><b>Resources (0–10):</b> Economic output. Some cards generate IP from high-resource states.</div></div>
+
+    <div class="sec-label">Global Danger Meters</div>
+    <div class="danger-row">
+      <span style="font-size:.9rem">☢</span>
+      <div class="danger-bar" style="background:linear-gradient(90deg,#e74c3c,#c0392b)"></div>
+      <span class="danger-label" style="color:#e74c3c">Nuclear Tension (0–10)</span>
+    </div>
+    <div class="r-row" style="margin-bottom:1rem"><div class="r-icon"></div><div class="r-text">Raised by military and nuclear cards. If it hits <b>10</b>, nuclear holocaust occurs — <b>all players lose immediately</b>.</div></div>
+    <div class="danger-row">
+      <span style="font-size:.9rem">🌍</span>
+      <div class="danger-bar" style="background:linear-gradient(90deg,#2ecc71,#27ae60)"></div>
+      <span class="danger-label" style="color:#2ecc71">World Stability (10–0)</span>
+    </div>
+    <div class="r-row"><div class="r-icon"></div><div class="r-text">Degraded by coups, revolutions, and chaos cards. If it hits <b>0</b>, societal collapse ends the game — highest VP at that moment wins.</div></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SECRET SOCIETIES                          -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="chapter">
+    <div class="chapter-title">Secret Societies</div>
+    <div class="soc-grid">
+
+      <div class="soc-card" style="border-color:#3498db55">
+        <div class="soc-name" style="color:#3498db">🔬 Technocrats</div>
+        <div class="soc-desc">VP: Each Republic with Secular culture and any Patriotism scores 1 VP.</div>
+        <div class="soc-cond-label">VP Condition</div>
+        <div class="soc-cond">Government = Republic<br>AND Culture = Secular<br>AND Patriotism &gt; 0</div>
+      </div>
+
+      <div class="soc-card" style="border-color:#9b59b655">
+        <div class="soc-name" style="color:#9b59b6">✝ Theocrats</div>
+        <div class="soc-desc">VP: Each Dictatorship with Religious culture and any Patriotism scores 1 VP.</div>
+        <div class="soc-cond-label">VP Condition</div>
+        <div class="soc-cond">Government = Dictatorship<br>AND Culture = Religious<br>AND Patriotism &gt; 0</div>
+      </div>
+
+      <div class="soc-card" style="border-color:#f39c1255">
+        <div class="soc-name" style="color:#f39c12">💰 Plutocrats</div>
+        <div class="soc-desc">VP: Each Capitalist state with any Nuclear stockpile scores 1 VP.</div>
+        <div class="soc-cond-label">VP Condition</div>
+        <div class="soc-cond">Economy = Capitalist<br>AND Nuclear &gt; 0</div>
+      </div>
+
+      <div class="soc-card" style="border-color:#e74c3c55">
+        <div class="soc-name" style="color:#e74c3c">⚔ Stratocrats</div>
+        <div class="soc-desc">VP: Each Communist state with Military ≥ 3 scores 1 VP.</div>
+        <div class="soc-cond-label">VP Condition</div>
+        <div class="soc-cond">Economy = Communist<br>AND Military ≥ 3</div>
+      </div>
+
+      <div class="soc-card" style="border-color:#1abc9c55">
+        <div class="soc-name" style="color:#1abc9c">🏴 Anarchists</div>
+        <div class="soc-desc">VP: Each Provisional government with any Patriotism scores 1 VP.</div>
+        <div class="soc-cond-label">VP Condition</div>
+        <div class="soc-cond">Government = Provisional<br>AND Patriotism &gt; 0</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- CARD LIST                                 -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="chapter">
+    <div class="chapter-title">Card List</div>
+
+    <!-- POLITICAL -->
+    <div class="card-type-header" style="color:#9b59b6">Political Cards</div>
+    <div class="card-grid">
+      <div class="card-block">
+        <div class="card-name">📝 Speechwriter</div>
+        <div class="card-meta" style="color:#9b59b6">2 💠 IP · Agent required</div>
+        <div class="card-desc">Reorganize state agenda. Change any non-superpower state's government one step.</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">💼 Lobbyist</div>
+        <div class="card-meta" style="color:#9b59b6">2 💠 IP · Agent required</div>
+        <div class="card-desc">Shift a state toward Republic. Draw 1 card.</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">🗡 Assassin</div>
+        <div class="card-meta" style="color:#9b59b6">3 💠 IP · Agent required</div>
+        <div class="card-desc">Replace Head of State. Change target state to Provisional government.</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">📣 Agitator</div>
+        <div class="card-meta" style="color:#9b59b6">1 💠 IP · Agent required</div>
+        <div class="card-desc">Force a state to execute its next agenda: random small change to gov/econ/cult.</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">📜 Reform Government</div>
+        <div class="card-meta" style="color:#9b59b6">3 💠 IP · Agent required</div>
+        <div class="card-desc">Change a state's government to Republic. +1 Patriotism.</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">⚔ Stage Coup</div>
+        <div class="card-meta" style="color:#9b59b6">4 💠 IP · Agent required</div>
+        <div class="card-desc">Military coup: change state to Dictatorship. Add +2 Military. +1 Tension.</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">🕵 Recruit Agent</div>
+        <div class="card-meta" style="color:#9b59b6">2 💠 IP</div>
+        <div class="card-desc">Place a new Agent in an adjacent state (grid neighbor of any of your states).</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">🧑‍💼 Infiltrate</div>
+        <div class="card-meta" style="color:#9b59b6">1 💠 IP · Agent required</div>
+        <div class="card-desc">Move one of your agents to any adjacent grid state.</div>
+      </div>
+    </div>
+
+    <!-- MILITARY -->
+    <div class="card-type-header" style="color:#e74c3c">Military Cards</div>
+    <div class="card-grid">
+      <div class="card-block">
+        <div class="card-name">☢ Nuclear Threat</div>
+        <div class="card-meta" style="color:#e74c3c">2 💠 IP · Agent required</div>
+        <div class="card-desc">Add +1 Nuclear to a state. +2 Global Tension.</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">💣 Build Nukes</div>
+        <div class="card-meta" style="color:#e74c3c">3 💠 IP · Agent required</div>
+        <div class="card-desc">Add +2 Nuclear to a state. +3 Global Tension.</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">🎖 Arms Buildup</div>
+        <div class="card-meta" style="color:#e74c3c">2 💠 IP · Agent required</div>
+        <div class="card-desc">Add +3 Conventional Military to a state.</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">🔫 Mutiny</div>
+        <div class="card-meta" style="color:#e74c3c">3 💠 IP · Agent required</div>
+        <div class="card-desc">Halve a state's military. Change it to Provisional government. +1 Tension.</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">🕊 Disarmament</div>
+        <div class="card-meta" style="color:#e74c3c">2 💠 IP · Agent required</div>
+        <div class="card-desc">Remove -2 Nuclear from a state. -2 Global Tension.</div>
+      </div>
+    </div>
+
+    <!-- CULTURAL -->
+    <div class="card-type-header" style="color:#1abc9c">Cultural Cards</div>
+    <div class="card-grid">
+      <div class="card-block">
+        <div class="card-name">🔥 Incite Revolution</div>
+        <div class="card-meta" style="color:#1abc9c">3 💠 IP · Agent required</div>
+        <div class="card-desc">Change target to Provisional government. +3 Patriotism. +1 Tension.</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">✝ Religious Revival</div>
+        <div class="card-meta" style="color:#1abc9c">2 💠 IP · Agent required</div>
+        <div class="card-desc">Change state culture to Religious. +2 Patriotism.</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">🔬 Secularization</div>
+        <div class="card-meta" style="color:#1abc9c">2 💠 IP · Agent required</div>
+        <div class="card-desc">Change state culture to Secular. +2 Patriotism.</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">📺 Propaganda</div>
+        <div class="card-meta" style="color:#1abc9c">2 💠 IP · Agent required</div>
+        <div class="card-desc">Add +3 Patriotism to a state.</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">🎭 Cultural Exchange</div>
+        <div class="card-meta" style="color:#1abc9c">1 💠 IP · Agent required</div>
+        <div class="card-desc">Add +1 Patriotism. Draw 1 card.</div>
+      </div>
+    </div>
+
+    <!-- ECONOMIC -->
+    <div class="card-type-header" style="color:#f39c12">Economic Cards</div>
+    <div class="card-grid">
+      <div class="card-block">
+        <div class="card-name">📈 Free Trade</div>
+        <div class="card-meta" style="color:#f39c12">1 💠 IP · Agent required</div>
+        <div class="card-desc">Change state to Capitalist economy. Gain +3 IP.</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">🏭 Nationalization</div>
+        <div class="card-meta" style="color:#f39c12">3 💠 IP · Agent required</div>
+        <div class="card-desc">Change state to Communist economy. +2 Resources to state.</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">🏗 Privatization</div>
+        <div class="card-meta" style="color:#f39c12">3 💠 IP · Agent required</div>
+        <div class="card-desc">Change state to Capitalist economy. +2 Resources.</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">🚫 Sanctions</div>
+        <div class="card-meta" style="color:#f39c12">2 💠 IP · Agent required</div>
+        <div class="card-desc">Remove -2 Resources from a state. Opponent with agent there loses 2 IP.</div>
+      </div>
+      <div class="card-block">
+        <div class="card-name">⛏ Resource Dev.</div>
+        <div class="card-meta" style="color:#f39c12">2 💠 IP · Agent required</div>
+        <div class="card-desc">Add +3 Resources to a state. Gain +2 IP.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">GLOBAL THERMO-NUCLEAR WARFARE · "Would you like to play a game?"</div>
+
+</div>
+</body>
+</html>
