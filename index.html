@@ -282,7 +282,20 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 /* ── AI COMMENTARY POPUP ── */
 .commentary-overlay{position:fixed;inset:0;background:rgba(0,0,0,.80);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem;}
 .commentary-overlay.show{display:flex;}
-.commentary-box{background:#0f0f22;border:1px solid #3a3a60;border-radius:1.2rem;width:min(600px,96vw);max-height:90vh;overflow-y:auto;box-shadow:0 2rem 6rem rgba(0,0,0,.85);display:flex;flex-direction:column;}
+.commentary-overlay.minimized{background:transparent;pointer-events:none;align-items:flex-end;justify-content:flex-end;padding:0 1.4rem 1.4rem 0;}
+.commentary-overlay.minimized .commentary-box{pointer-events:auto;width:auto;max-height:none;overflow:visible;border-radius:2rem;}
+.commentary-overlay.minimized .comm-band,.commentary-overlay.minimized .comm-body,.commentary-overlay.minimized .comm-footer{display:none !important;}
+.commentary-overlay.minimized .comm-pill{display:flex;}
+.comm-pill{display:none;align-items:center;gap:.7rem;padding:.6rem 1rem .6rem .75rem;cursor:default;}
+.comm-pill-avatar{width:2rem;height:2rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;border:2px solid rgba(255,255,255,.2);}
+.comm-pill-info{display:flex;flex-direction:column;gap:1px;}
+.comm-pill-name{font-size:.75rem;font-weight:900;color:#fff;white-space:nowrap;}
+.comm-pill-phase{font-size:.58rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);white-space:nowrap;}
+.comm-pill-resume{margin-left:.4rem;padding:.35rem .85rem;border-radius:1rem;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:.72rem;font-weight:700;cursor:pointer;transition:background .13s;white-space:nowrap;}
+.comm-pill-resume:hover{background:rgba(255,255,255,.22);}
+.comm-minimize-btn{position:absolute;top:.7rem;right:.9rem;background:transparent;border:none;color:var(--dim);font-size:1.1rem;cursor:pointer;line-height:1;padding:2px 5px;border-radius:4px;transition:color .13s;}
+.comm-minimize-btn:hover{color:#fff;}
+.commentary-box{background:#0f0f22;border:1px solid #3a3a60;border-radius:1.2rem;width:min(600px,96vw);max-height:90vh;overflow-y:auto;box-shadow:0 2rem 6rem rgba(0,0,0,.85);display:flex;flex-direction:column;position:relative;}
 /* top colour band */
 .comm-band{height:5px;border-radius:1.2rem 1.2rem 0 0;flex-shrink:0;}
 .comm-body{padding:1.8rem 2rem 1.6rem;display:flex;flex-direction:column;gap:1.1rem;}
@@ -402,6 +415,16 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 <!-- ══════════ AI COMMENTARY ══════════ -->
 <div class="commentary-overlay" id="commOverlay">
   <div class="commentary-box">
+    <button class="comm-minimize-btn" onclick="minimizeCommentary()" title="Minimize — browse the board freely">⊟</button>
+    <!-- Minimized pill (shown instead of full box when minimized) -->
+    <div class="comm-pill" id="commPill">
+      <div class="comm-pill-avatar" id="commPillAvatar"></div>
+      <div class="comm-pill-info">
+        <div class="comm-pill-name" id="commPillName"></div>
+        <div class="comm-pill-phase" id="commPillPhase"></div>
+      </div>
+      <button class="comm-pill-resume" onclick="restoreCommentary()">▶ Resume</button>
+    </div>
     <div class="comm-band" id="commBand"></div>
     <div class="comm-body">
       <div class="comm-header">
@@ -2196,6 +2219,8 @@ function showOpeningCommentary(player, onContinue) {
   document.getElementById('commContinueBtn').textContent = '▶ Begin';
 
   commResumeCallback = onContinue;
+  syncCommPill();
+  document.getElementById('commOverlay').classList.remove('minimized');
   document.getElementById('commOverlay').classList.add('show');
 }
 
@@ -2263,17 +2288,48 @@ function showCommentary(player, card, targetSid, onContinue) {
           : `linear-gradient(135deg,${soc.color},${soc.color}88)`;
 
   commResumeCallback = onContinue;
+  syncCommPill();
+  document.getElementById('commOverlay').classList.remove('minimized');
   document.getElementById('commOverlay').classList.add('show');
 }
 
 function resumeFromCommentary() {
   document.getElementById('commOverlay').classList.remove('show');
+  document.getElementById('commOverlay').classList.remove('minimized');
   if (commResumeCallback) { const fn = commResumeCallback; commResumeCallback = null; fn(); }
 }
 
 function skipCommentary() {
   commSkipped = true;
   resumeFromCommentary();
+}
+
+function minimizeCommentary() {
+  document.getElementById('commOverlay').classList.add('minimized');
+}
+
+function restoreCommentary() {
+  document.getElementById('commOverlay').classList.remove('minimized');
+}
+
+function syncCommPill() {
+  // Mirror the current overlay identity info into the minimized pill
+  const avatar = document.getElementById('commAvatar');
+  const name   = document.getElementById('commName');
+  const phase  = document.getElementById('commPhaseLbl');
+  const step   = document.getElementById('commPhaseStep');
+  const pAvatar = document.getElementById('commPillAvatar');
+  const pName   = document.getElementById('commPillName');
+  const pPhase  = document.getElementById('commPillPhase');
+  if (pAvatar) { pAvatar.textContent = avatar?.textContent || ''; pAvatar.style.background = avatar?.style.background || ''; }
+  if (pName)   pName.textContent   = name?.textContent  || '';
+  const phaseText = phase?.textContent || '';
+  const stepText  = step?.textContent  || '';
+  if (pPhase)  pPhase.textContent  = phaseText && stepText ? `${phaseText} · ${stepText}` : (phaseText || 'Commentary');
+  // Match the pill band colour to commBand
+  const band = document.getElementById('commBand');
+  const box  = document.querySelector('.commentary-box');
+  if (band && box) box.style.borderTopColor = band.style.background || '';
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2425,7 +2481,11 @@ function advanceNarr() {
   } else {
     commResumeCallback = advanceNarr;
   }
-  document.getElementById('commOverlay').classList.add('show');
+  syncCommPill();
+  // If already minimized, stay minimized — just update the pill content
+  if (!document.getElementById('commOverlay').classList.contains('minimized')) {
+    document.getElementById('commOverlay').classList.add('show');
+  }
 }
 
 function narrHideAll() {
