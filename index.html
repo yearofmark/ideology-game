@@ -1099,6 +1099,12 @@ function renderSPPicker() {
 }
 
 function selectSP(spId) {
+  // Hard guard: Anarchists cannot start in a superpower
+  const p = spPickPlayers[spPickIdx];
+  if (p && p.soc === 'ANA') {
+    const state = INIT_STATES.find(s => s.id === spId);
+    if (state && state.sp) return; // silently block — picker never shows these anyway
+  }
   spPickChoices[spPickIdx] = spId;
   spPickIdx++;
   if (spPickIdx >= spPickPlayers.length) {
