@@ -214,6 +214,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .st.valid-target{box-shadow:0 0 0 2px rgba(255,255,255,.9);animation:tpulse .7s infinite alternate;z-index:5;}
 @keyframes tpulse{from{box-shadow:0 0 0 2px rgba(255,255,255,.4);}to{box-shadow:0 0 0 3px #fff;}}
 .st.card-hover-target{box-shadow:0 0 0 3px #ffd700,0 0 22px rgba(255,215,0,.55);z-index:6;border-color:#ffd700 !important;}
+.st.card-hover-adj{box-shadow:0 0 0 2px rgba(255,255,255,.55),0 0 12px rgba(255,255,255,.18);z-index:5;border-color:rgba(255,255,255,.45) !important;}
 .st.card-hover-all{box-shadow:0 0 0 2px rgba(80,190,255,.85),0 0 16px rgba(80,190,255,.4);z-index:6;border-color:rgba(80,190,255,.7) !important;}
 /* ── DELTA CHIPS ── */
 @keyframes chipFloat{0%{opacity:0;transform:translateX(-50%) translateY(0) scale(.8);}15%{opacity:1;transform:translateX(-50%) translateY(-6px) scale(1);}80%{opacity:1;transform:translateX(-50%) translateY(-30px);}100%{opacity:0;transform:translateX(-50%) translateY(-42px);}}
@@ -1674,42 +1675,47 @@ function isValidTarget(sid) {
   if (G.burnMode === 'move-to')   return isAdjacentTo(G.burnMoveFrom, sid);
   if (!G.selCard) return false;
   const card = G.selCard;
-  if (!card.needsAgent) return true; // can target any state
-  // Need agent on that state or adjacent to one with agent (for infiltrate/recruit)
-  if (card.effect === 'recruit') return isAdjacentToAgent(sid, p);
+  if (!card.needsAgent) return true; // global: any state
+  if (card.effect === 'recruit') return isAdjacentToAgent(sid, p) && !p.agents.includes(sid);
   if (card.effect === 'infiltrate') {
     if (G.infiltrateFrom) return isAdjacentTo(G.infiltrateFrom, sid);
     return p.agents.includes(sid);
   }
-  return p.agents.includes(sid);
+  // All other agent-required cards: own agent state OR adjacent to an agent
+  return p.agents.includes(sid) || isAdjacentToAgent(sid, p);
 }
 
 // Preview which states a card would target — used for hover highlight (does NOT mutate G)
+// Returns: ids = direct (own agent), adjIds = reachable via adjacency, all = global
 function getCardTargets(card) {
   const p = cur();
-  // Check specific effects first (some have needsAgent:false but still have specific targeting)
   if (card.effect === 'recruit') {
     const ids = G.states.filter(s => isAdjacentToAgent(s.id, p) && !p.agents.includes(s.id)).map(s => s.id);
-    return { ids, all: false };
+    return { ids, adjIds: [], all: false };
   }
-  if (card.effect === 'infiltrate') return { ids: [...p.agents], all: false };
-  // Global / no-agent-needed cards: all states are valid
-  if (!card.needsAgent) return { ids: G.states.map(s => s.id), all: true };
-  // Everything else: states where player already has an agent
-  return { ids: [...p.agents], all: false };
+  if (card.effect === 'infiltrate') return { ids: [...p.agents], adjIds: [], all: false };
+  if (!card.needsAgent) return { ids: G.states.map(s => s.id), adjIds: [], all: true };
+  // Agent-required: gold = own agent, silver = adjacent reachable
+  const ownIds = [...p.agents];
+  const adjIds = G.states.filter(s => !p.agents.includes(s.id) && isAdjacentToAgent(s.id, p)).map(s => s.id);
+  return { ids: ownIds, adjIds, all: false };
 }
 
 function applyCardHoverHighlight(card) {
-  const { ids, all } = getCardTargets(card);
+  const { ids, adjIds, all } = getCardTargets(card);
   const cls = all ? 'card-hover-all' : 'card-hover-target';
   ids.forEach(sid => {
     const el = document.querySelector(`.st[data-sid="${sid}"]`);
     if (el) el.classList.add(cls);
   });
+  (adjIds || []).forEach(sid => {
+    const el = document.querySelector(`.st[data-sid="${sid}"]`);
+    if (el) el.classList.add('card-hover-adj');
+  });
 }
 function clearCardHoverHighlight() {
-  document.querySelectorAll('.st.card-hover-target,.st.card-hover-all')
-    .forEach(el => el.classList.remove('card-hover-target', 'card-hover-all'));
+  document.querySelectorAll('.st.card-hover-target,.st.card-hover-all,.st.card-hover-adj')
+    .forEach(el => el.classList.remove('card-hover-target', 'card-hover-all', 'card-hover-adj'));
 }
 
 function isAdjacentToAgent(sid, player) {
@@ -1777,7 +1783,7 @@ function onStateClic(sid) {
       return;
     }
 
-    if (!isValidTarget(sid)) return notify('Invalid target. Need your agent on that state.');
+    if (!isValidTarget(sid)) return notify('Invalid target. Need your agent on that state or an adjacent one.');
     doPlayCard(sid);
   }
 }
