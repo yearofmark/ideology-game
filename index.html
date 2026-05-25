@@ -1204,7 +1204,17 @@ function autoAssignSP(players, taken) {
   });
 }
 
+function randomizeBoardPositions() {
+  // Shuffle the grid positions of the 21 non-superpower countries.
+  // Superpowers stay locked to their corner positions.
+  const nonSp = INIT_STATES.filter(s => !s.sp);
+  const positions = shuffle(nonSp.map(s => ({col: s.col, row: s.row})));
+  nonSp.forEach((s, i) => { s.col = positions[i].col; s.row = positions[i].row; });
+}
+
 function startGame() {
+  randomizeBoardPositions(); // fresh random layout every game
+
   const players = setupPlayers.map((p, i) => ({
     name: p.name, soc: p.soc,
     isAI: gMode==='solo' ? i>0 : gMode==='sim' ? true : false,
