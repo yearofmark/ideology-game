@@ -914,24 +914,25 @@ const INIT_STATES = [
 // ═══════════════════════════════════════════════════════
 const CARD_POOL = [
   // ── POLITICAL
+  // ownAgentOnly:true = must have agent IN the target state (too powerful for just adjacency)
   {id:'speechwriter', name:'Speechwriter',     type:'political', cost:2, icon:'📝', desc:'Reorganize state agenda. Change any non-superpower state\'s government one step.', effect:'gov_step', needsAgent:true},
   {id:'lobbyist',     name:'Lobbyist',         type:'political', cost:2, icon:'💼', desc:'Shift a state toward Republic. Draw 1 card.', effect:'lobbying', needsAgent:true},
-  {id:'assassin',     name:'Assassin',         type:'political', cost:3, icon:'🗡', desc:'Replace Head of State. Change target state to Provisional government.', effect:'assassinate', needsAgent:true},
+  {id:'assassin',     name:'Assassin',         type:'political', cost:3, icon:'🗡', desc:'Replace Head of State. Change target state to Provisional government.', effect:'assassinate', needsAgent:true, ownAgentOnly:true},
   {id:'agitator',     name:'Agitator',         type:'political', cost:1, icon:'📣', desc:'Force a state to execute its next agenda: random small change to gov/econ/cult.', effect:'agitate', needsAgent:true},
-  {id:'reform',       name:'Reform Government',type:'political', cost:3, icon:'📜', desc:'Change a state\'s government to Republic. +1 Patriotism.', effect:'reform_gov', needsAgent:true},
-  {id:'coup',         name:'Stage Coup',       type:'political', cost:4, icon:'⚔',  desc:'Military coup: change state to Dictatorship. Add +2 Military. +1 Tension.', effect:'coup', needsAgent:true},
+  {id:'reform',       name:'Reform Government',type:'political', cost:3, icon:'📜', desc:'Change a state\'s government to Republic. +1 Patriotism.', effect:'reform_gov', needsAgent:true, ownAgentOnly:true},
+  {id:'coup',         name:'Stage Coup',       type:'political', cost:4, icon:'⚔',  desc:'Military coup: change state to Dictatorship. Add +2 Military. +1 Tension.', effect:'coup', needsAgent:true, ownAgentOnly:true},
   {id:'recruit_ag',   name:'Recruit Agent',    type:'political', cost:2, icon:'🕵', desc:'Place a new Agent in an adjacent state (grid neighbor of any of your states).', effect:'recruit', needsAgent:false},
   {id:'infiltrate',   name:'Infiltrate',       type:'political', cost:1, icon:'🧑‍💼',desc:'Move one of your agents to any adjacent grid state.', effect:'infiltrate', needsAgent:true, moveAgent:true},
 
   // ── MILITARY
   {id:'nuke_threat',  name:'Nuclear Threat',   type:'military',  cost:2, icon:'☢',  desc:'Add +1 Nuclear to a state. +2 Global Tension.', effect:'add_nuclear', needsAgent:true},
-  {id:'build_nukes',  name:'Build Nukes',       type:'military',  cost:3, icon:'💣', desc:'Add +2 Nuclear to a state. +3 Global Tension.', effect:'build_nuclear', needsAgent:true},
+  {id:'build_nukes',  name:'Build Nukes',       type:'military',  cost:3, icon:'💣', desc:'Add +2 Nuclear to a state. +3 Global Tension.', effect:'build_nuclear', needsAgent:true, ownAgentOnly:true},
   {id:'arms_buildup', name:'Arms Buildup',      type:'military',  cost:2, icon:'🎖', desc:'Add +3 Conventional Military to a state.', effect:'add_military', needsAgent:true},
-  {id:'mutiny',       name:'Mutiny',            type:'military',  cost:3, icon:'🔫', desc:'Halve a state\'s military. Change it to Provisional government. +1 Tension.', effect:'mutiny', needsAgent:true},
+  {id:'mutiny',       name:'Mutiny',            type:'military',  cost:3, icon:'🔫', desc:'Halve a state\'s military. Change it to Provisional government. +1 Tension.', effect:'mutiny', needsAgent:true, ownAgentOnly:true},
   {id:'disarm',       name:'Disarmament',       type:'military',  cost:2, icon:'🕊', desc:'Remove -2 Nuclear from a state. -2 Global Tension.', effect:'disarm', needsAgent:true},
 
   // ── CULTURAL
-  {id:'revolution',   name:'Incite Revolution', type:'cultural',  cost:3, icon:'🔥', desc:'Change target to Provisional government. +3 Patriotism. +1 Tension.', effect:'revolution', needsAgent:true},
+  {id:'revolution',   name:'Incite Revolution', type:'cultural',  cost:3, icon:'🔥', desc:'Change target to Provisional government. +3 Patriotism. +1 Tension.', effect:'revolution', needsAgent:true, ownAgentOnly:true},
   {id:'revivalism',   name:'Religious Revival',  type:'cultural',  cost:2, icon:'✝',  desc:'Change state culture to Religious. +2 Patriotism.', effect:'set_religious', needsAgent:true},
   {id:'secularize',   name:'Secularization',    type:'cultural',  cost:2, icon:'🔬', desc:'Change state culture to Secular. +2 Patriotism.', effect:'set_secular', needsAgent:true},
   {id:'propaganda',   name:'Propaganda',        type:'cultural',  cost:2, icon:'📺', desc:'Add +3 Patriotism to a state.', effect:'add_patriotism', needsAgent:true},
@@ -939,9 +940,9 @@ const CARD_POOL = [
 
   // ── ECONOMIC
   {id:'free_trade',   name:'Free Trade',        type:'economic',  cost:1, icon:'📈', desc:'Change state to Capitalist economy. Gain +3 IP.', effect:'set_capitalist', needsAgent:true},
-  {id:'nationalize',  name:'Nationalization',   type:'economic',  cost:3, icon:'🏭', desc:'Change state to Communist economy. +2 Resources to state.', effect:'set_communist', needsAgent:true},
-  {id:'privatize',    name:'Privatization',     type:'economic',  cost:3, icon:'🏗',  desc:'Change state to Capitalist economy. +2 Resources.', effect:'set_capitalist2', needsAgent:true},
-  {id:'sanctions',    name:'Sanctions',         type:'economic',  cost:2, icon:'🚫', desc:'Remove -2 Resources from a state. Opponent with agent there loses 2 IP.', effect:'sanctions', needsAgent:true},
+  {id:'nationalize',  name:'Nationalization',   type:'economic',  cost:3, icon:'🏭', desc:'Change state to Communist economy. +2 Resources to state.', effect:'set_communist', needsAgent:true, ownAgentOnly:true},
+  {id:'privatize',    name:'Privatization',     type:'economic',  cost:3, icon:'🏗',  desc:'Change state to Capitalist economy. +2 Resources.', effect:'set_capitalist2', needsAgent:true, ownAgentOnly:true},
+  {id:'sanctions',    name:'Sanctions',         type:'economic',  cost:2, icon:'🚫', desc:'Remove -2 Resources from a state. Opponent with agent there loses 2 IP.', effect:'sanctions', needsAgent:true, ownAgentOnly:true},
   {id:'resource_dev', name:'Resource Dev.',     type:'economic',  cost:2, icon:'⛏',  desc:'Add +3 Resources to a state. Gain +2 IP.', effect:'resource_dev', needsAgent:true},
 
   // ── GLOBAL EVENT CARDS (society-specific · 2 copies · affect all/many states · no agent needed)
@@ -1681,6 +1682,8 @@ function isValidTarget(sid) {
     if (G.infiltrateFrom) return isAdjacentTo(G.infiltrateFrom, sid);
     return p.agents.includes(sid);
   }
+  // ownAgentOnly cards: must have agent IN the target state
+  if (card.ownAgentOnly) return p.agents.includes(sid);
   // All other agent-required cards: own agent state OR adjacent to an agent
   return p.agents.includes(sid) || isAdjacentToAgent(sid, p);
 }
@@ -1695,7 +1698,9 @@ function getCardTargets(card) {
   }
   if (card.effect === 'infiltrate') return { ids: [...p.agents], adjIds: [], all: false };
   if (!card.needsAgent) return { ids: G.states.map(s => s.id), adjIds: [], all: true };
-  // Agent-required: gold = own agent, silver = adjacent reachable
+  // ownAgentOnly: only highlight own agent states (no adjacency)
+  if (card.ownAgentOnly) return { ids: [...p.agents], adjIds: [], all: false };
+  // Adjacent-ok: gold = own agent, silver = adjacent reachable
   const ownIds = [...p.agents];
   const adjIds = G.states.filter(s => !p.agents.includes(s.id) && isAdjacentToAgent(s.id, p)).map(s => s.id);
   return { ids: ownIds, adjIds, all: false };
