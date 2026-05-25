@@ -587,7 +587,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   </div>
 
   <div class="sbox">
-    <h3>Secret Societies — Choose Your Cause</h3>
+    <h3>Secret Societies — Reference</h3>
     <div class="soc-grid" id="socGrid"></div>
   </div>
 
@@ -1030,24 +1030,14 @@ function renderSetupPlayers() {
     const isAI = (gMode==='solo' && i>0) || gMode==='sim';
     return `<div class="prow">
       <span class="plbl">${isAI ? (gMode==='sim'?'🤖':'AI '+i) : 'P'+(i+1)}</span>
-      ${Object.values(SOCIETIES).map(s=>
-        `<button class="soc-btn ${p.soc===s.id?'selected':''}" style="color:${s.color};padding:8px 5px;" onclick="setPlayerSoc(${i},'${s.id}')">
-          <span class="si" style="font-size:1rem">${s.icon}</span>
-          <span class="sn" style="font-size:.65rem">${s.name}</span>
-        </button>`).join('')}
+      <span style="font-size:.72rem;color:var(--dim);padding:0 8px;">Society assigned randomly at start</span>
       ${i>=2?`<button class="rm-btn" onclick="removePlayer(${i})">✕</button>`:''}
     </div>`;
   }).join('');
 
-  // hide Add Player button at 4 players or in solo/sim mode
+  // hide Add Player button at 5 players or in solo/sim mode
   const addBtn = document.getElementById('addPBtn');
   if (addBtn) addBtn.style.display = (gMode==='solo' || gMode==='sim' || setupPlayers.length >= 5) ? 'none' : '';
-
-  // update society buttons highlighting
-  document.querySelectorAll('#socGrid .soc-btn').forEach(btn => {
-    const id = btn.dataset.soc;
-    btn.classList.toggle('selected', setupPlayers.some(p=>p.soc===id));
-  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1200,14 +1190,17 @@ function autoAssignSP(players, taken) {
 }
 
 function startGame() {
+  // Randomly deal a unique society to each player
+  const socIds = shuffle(Object.keys(SOCIETIES)).slice(0, setupPlayers.length);
+
   const players = setupPlayers.map((p, i) => ({
-    name: p.name, soc: p.soc,
+    name: p.name, soc: socIds[i],
     isAI: gMode==='solo' ? i>0 : gMode==='sim' ? true : false,
-    ip: 0, deck: buildDeck(p.soc), hand: [], discard: [], vpScore: 0,
+    ip: 0, deck: buildDeck(socIds[i]), hand: [], discard: [], vpScore: 0,
     agents: [], startSP: null,
   }));
 
-  // Randomly assign a non-superpower starting state to every player, then start
+  // Randomly assign starting positions based on society rules, then start
   autoAssignSP(players, []);
   finishStartGame(players);
 }
