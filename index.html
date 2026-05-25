@@ -587,7 +587,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   </div>
 
   <div class="sbox">
-    <h3>Secret Societies — Reference</h3>
+    <h3>Secret Societies — Choose Your Cause</h3>
     <div class="soc-grid" id="socGrid"></div>
   </div>
 
@@ -1028,9 +1028,18 @@ function renderSetupPlayers() {
   const c = document.getElementById('pRows');
   c.innerHTML = setupPlayers.map((p,i) => {
     const isAI = (gMode==='solo' && i>0) || gMode==='sim';
+    const takenByOthers = setupPlayers.filter((_,j)=>j!==i).map(x=>x.soc);
     return `<div class="prow">
       <span class="plbl">${isAI ? (gMode==='sim'?'🤖':'AI '+i) : 'P'+(i+1)}</span>
-      <span style="font-size:.72rem;color:var(--dim);padding:0 8px;">Society assigned randomly at start</span>
+      ${Object.values(SOCIETIES).map(s => {
+        const taken = takenByOthers.includes(s.id);
+        return `<button class="soc-btn ${p.soc===s.id?'selected':''}"
+          style="color:${s.color};padding:8px 5px;${taken?'opacity:.25;pointer-events:none;cursor:not-allowed;':''}"
+          onclick="setPlayerSoc(${i},'${s.id}')">
+          <span class="si" style="font-size:1rem">${s.icon}</span>
+          <span class="sn" style="font-size:.65rem">${s.name}</span>
+        </button>`;
+      }).join('')}
       ${i>=2?`<button class="rm-btn" onclick="removePlayer(${i})">✕</button>`:''}
     </div>`;
   }).join('');
@@ -1038,6 +1047,12 @@ function renderSetupPlayers() {
   // hide Add Player button at 5 players or in solo/sim mode
   const addBtn = document.getElementById('addPBtn');
   if (addBtn) addBtn.style.display = (gMode==='solo' || gMode==='sim' || setupPlayers.length >= 5) ? 'none' : '';
+
+  // highlight societies in use on the reference grid
+  document.querySelectorAll('#socGrid .soc-btn').forEach(btn => {
+    const id = btn.dataset.soc;
+    btn.classList.toggle('selected', setupPlayers.some(p=>p.soc===id));
+  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1190,19 +1205,46 @@ function autoAssignSP(players, taken) {
 }
 
 function startGame() {
-  // Randomly deal a unique society to each player
-  const socIds = shuffle(Object.keys(SOCIETIES)).slice(0, setupPlayers.length);
-
   const players = setupPlayers.map((p, i) => ({
-    name: p.name, soc: socIds[i],
+    name: p.name, soc: p.soc,
     isAI: gMode==='solo' ? i>0 : gMode==='sim' ? true : false,
-    ip: 0, deck: buildDeck(socIds[i]), hand: [], discard: [], vpScore: 0,
+    ip: 0, deck: buildDeck(p.soc), hand: [], discard: [], vpScore: 0,
     agents: [], startSP: null,
   }));
 
-  // Randomly assign starting positions based on society rules, then start
-  autoAssignSP(players, []);
-  finishStartGame(players);
+  if (gMode === 'sim') {
+    autoAssignSP(players, []);
+    finishStartGame(players);
+    return;
+  }
+
+  const humanPlayers = players.filter(p => !p.isAI);
+  const aiPlayers    = players.filter(p =>  p.isAI);
+
+  if (humanPlayers.length === 0) {
+    autoAssignSP(players, []);
+    finishStartGame(players);
+    return;
+  }
+
+  // Auto-assign AI players first, then show board for human picks
+  const takenIds = [];
+  autoAssignSP(aiPlayers, takenIds);
+
+  G = {
+    players,
+    states: INIT_STATES.map(s => ({...s, entGov:0, entEcon:0, entCult:0})),
+    turn: 0, round: 1, phase: 'pick', drawn: false, vpThresh,
+    tension: 0, stability: 10,
+    selCard: null, selCardIdx: null, agentMode: false, infiltrateFrom: null,
+    pendingTarget: false,
+    burnMode: null, burnCard: null, burnCardIdx: null, burnMoveFrom: null,
+    log: [],
+  };
+  showScreen('game');
+  document.getElementById('simBar').classList.remove('show');
+  renderAll();
+  enterBoardPickMode(humanPlayers, takenIds, () => { finishStartGame(players); });
 }
 
 function finishStartGame(players) {
