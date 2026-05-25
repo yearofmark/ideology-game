@@ -1182,23 +1182,12 @@ function onBoardPick(sid) {
 }
 
 function autoAssignSP(players, taken) {
-  // Silently assign the best available starting state for each player.
-  // Non-ANA: pick best-fit superpower. ANA: pick best non-SP non-adjacent state.
-  const order = ['ideal','strong','fair','weak'];
-  const sps   = INIT_STATES.filter(s => s.sp);
+  // Randomly assign a non-superpower starting state to each player.
+  // ANA additionally excludes states adjacent to a superpower.
   players.forEach(p => {
-    let best = null;
-    if (p.soc === 'ANA') {
-      const pool = ANA_STARTS.map(a => INIT_STATES.find(s => s.id === a.id));
-      best = pool.find(s => s && !taken.includes(s.id));
-    } else {
-      const fit = SP_FIT[p.soc];
-      for (const rating of order) {
-        best = sps.find(s => fit[s.id].rating === rating && !taken.includes(s.id));
-        if (best) break;
-      }
-      if (!best) best = sps.find(s => !taken.includes(s.id));
-    }
+    let pool = shuffle(INIT_STATES.filter(s => !s.sp && !taken.includes(s.id)));
+    if (p.soc === 'ANA') pool = pool.filter(s => !isSpAdjacentStatic(s.id));
+    const best = pool[0];
     if (!best) return;
     p.agents  = [best.id];
     p.startSP = best.id;
@@ -1214,51 +1203,16 @@ function startGame() {
     agents: [], startSP: null,
   }));
 
-  if (gMode === 'sim') {
-    // All AI — auto-assign silently and start
-    autoAssignSP(players, []);
-    finishStartGame(players);
-    return;
-  }
-
-  const humanPlayers = players.filter(p => !p.isAI);
-  const aiPlayers    = players.filter(p =>  p.isAI);
-
-  if (humanPlayers.length === 0) {
-    autoAssignSP(players, []);
-    finishStartGame(players);
-    return;
-  }
-
-  // Auto-assign AI players first so the board shows their chosen states as taken
-  const takenIds = [];
-  autoAssignSP(aiPlayers, takenIds);
-
-  // Show the board so players can scout, then enter board-click pick mode
-  G = {
-    players,
-    states: INIT_STATES.map(s => ({...s, entGov:0, entEcon:0, entCult:0})),
-    turn: 0, round: 1, phase: 'pick', drawn: false, vpThresh,
-    tension: 0, stability: 10,
-    selCard: null, selCardIdx: null, agentMode: false, infiltrateFrom: null,
-    pendingTarget: false,
-    burnMode: null, burnCard: null, burnCardIdx: null, burnMoveFrom: null,
-    log: [],
-  };
-  showScreen('game');
-  document.getElementById('simBar').classList.remove('show');
-  renderAll();
-
-  enterBoardPickMode(humanPlayers, takenIds, () => {
-    finishStartGame(players);
-  });
+  // Randomly assign a non-superpower starting state to every player, then start
+  autoAssignSP(players, []);
+  finishStartGame(players);
 }
 
 function finishStartGame(players) {
-  // Starting IP = the resources value of each player's chosen superpower
+  // Starting IP = the resources value of each player's randomly assigned starting state (min 3)
   players.forEach(p => {
     const sp = INIT_STATES.find(s => s.id === p.startSP);
-    p.ip = sp ? sp.resources : 3;
+    p.ip = sp ? Math.max(3, sp.resources) : 3;
   });
 
   const states = INIT_STATES.map(s => ({...s, entGov:0, entEcon:0, entCult:0}));
