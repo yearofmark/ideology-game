@@ -1182,11 +1182,15 @@ function onBoardPick(sid) {
 }
 
 function autoAssignSP(players, taken) {
-  // Randomly assign a non-superpower starting state to each player.
-  // ANA additionally excludes states adjacent to a superpower.
+  // Non-ANA societies start in a randomly chosen superpower.
+  // Anarchists start in a randomly chosen non-superpower, non-SP-adjacent state.
   players.forEach(p => {
-    let pool = shuffle(INIT_STATES.filter(s => !s.sp && !taken.includes(s.id)));
-    if (p.soc === 'ANA') pool = pool.filter(s => !isSpAdjacentStatic(s.id));
+    let pool;
+    if (p.soc === 'ANA') {
+      pool = shuffle(INIT_STATES.filter(s => !s.sp && !isSpAdjacentStatic(s.id) && !taken.includes(s.id)));
+    } else {
+      pool = shuffle(INIT_STATES.filter(s => s.sp && !taken.includes(s.id)));
+    }
     const best = pool[0];
     if (!best) return;
     p.agents  = [best.id];
