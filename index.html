@@ -213,6 +213,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .st.gov-provisional{border-style:dashed;}
 .st.valid-target{box-shadow:0 0 0 2px rgba(255,255,255,.9);animation:tpulse .7s infinite alternate;z-index:5;}
 @keyframes tpulse{from{box-shadow:0 0 0 2px rgba(255,255,255,.4);}to{box-shadow:0 0 0 3px #fff;}}
+.st.card-hover-target{box-shadow:0 0 0 3px #ffd700,0 0 22px rgba(255,215,0,.55);z-index:6;border-color:#ffd700 !important;}
+.st.card-hover-all{box-shadow:0 0 0 2px rgba(80,190,255,.85),0 0 16px rgba(80,190,255,.4);z-index:6;border-color:rgba(80,190,255,.7) !important;}
 /* ── DELTA CHIPS ── */
 @keyframes chipFloat{0%{opacity:0;transform:translateX(-50%) translateY(0) scale(.8);}15%{opacity:1;transform:translateX(-50%) translateY(-6px) scale(1);}80%{opacity:1;transform:translateX(-50%) translateY(-30px);}100%{opacity:0;transform:translateX(-50%) translateY(-42px);}}
 .delta-chip{position:absolute;z-index:180;font-size:.62rem;font-weight:900;padding:2px 7px;border-radius:10px;pointer-events:none;white-space:nowrap;left:50%;animation:chipFloat 2.2s ease-out forwards;box-shadow:0 2px 8px rgba(0,0,0,.7);}
@@ -1501,6 +1503,11 @@ function renderHand() {
     `;
     div.dataset.tip = `<b>${card.name}</b>${card.cost} 💠 IP · ${card.global?'GLOBAL EVENT':card.power?'POWER CARD':card.type}<br>${card.desc}`;
     div.addEventListener('click', () => showCardPopup(card, realIdx));
+    div.addEventListener('mouseenter', () => {
+      if (G.pendingTarget || G.agentMode || G.burnMode) return;
+      applyCardHoverHighlight(card);
+    });
+    div.addEventListener('mouseleave', clearCardHoverHighlight);
     container.appendChild(div);
   });
 }
@@ -1676,6 +1683,34 @@ function isValidTarget(sid) {
     return p.agents.includes(sid);
   }
   return p.agents.includes(sid);
+}
+
+// Preview which states a card would target — used for hover highlight (does NOT mutate G)
+function getCardTargets(card) {
+  const p = cur();
+  // Check specific effects first (some have needsAgent:false but still have specific targeting)
+  if (card.effect === 'recruit') {
+    const ids = G.states.filter(s => isAdjacentToAgent(s.id, p) && !p.agents.includes(s.id)).map(s => s.id);
+    return { ids, all: false };
+  }
+  if (card.effect === 'infiltrate') return { ids: [...p.agents], all: false };
+  // Global / no-agent-needed cards: all states are valid
+  if (!card.needsAgent) return { ids: G.states.map(s => s.id), all: true };
+  // Everything else: states where player already has an agent
+  return { ids: [...p.agents], all: false };
+}
+
+function applyCardHoverHighlight(card) {
+  const { ids, all } = getCardTargets(card);
+  const cls = all ? 'card-hover-all' : 'card-hover-target';
+  ids.forEach(sid => {
+    const el = document.querySelector(`.st[data-sid="${sid}"]`);
+    if (el) el.classList.add(cls);
+  });
+}
+function clearCardHoverHighlight() {
+  document.querySelectorAll('.st.card-hover-target,.st.card-hover-all')
+    .forEach(el => el.classList.remove('card-hover-target', 'card-hover-all'));
 }
 
 function isAdjacentToAgent(sid, player) {
